@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Geist', 'Pretendard Variable', Pretendard, sans-serif;
+  --color-accent: oklch(0.6 0.15 32);
+  --color-accent-soft: oklch(0.95 0.03 32);
+}
+
+body {
+  @apply bg-zinc-50 font-sans text-zinc-900 antialiased break-keep;
+}
