@@ -39,6 +39,7 @@ export default function Questionnaire({ onComplete, onExit }: Props) {
         <div className="mt-3 h-1 w-40 overflow-hidden rounded-full bg-zinc-200">
           <motion.div
             className="h-full origin-left bg-accent"
+            initial={false}
             animate={{ scaleX: (step + 1) / QUESTIONS.length }}
             transition={spring}
           />
