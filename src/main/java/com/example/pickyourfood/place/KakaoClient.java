@@ -47,15 +47,12 @@ public class KakaoClient {
 				.build(query));
 	}
 
-	public Optional<KakaoPlace> nearest(String category, double lat, double lng, int radius) {
+	// the three nearest places of a category, nearest first
+	public List<KakaoPlace> nearby(String category, double lat, double lng, int radius) {
 		return search(uri -> uri.path("/v2/local/search/category.json")
-				.queryParam("category_group_code", category)
-				.queryParam("x", lng)
-				.queryParam("y", lat)
-				.queryParam("radius", radius)
-				.queryParam("sort", "distance")
-				.queryParam("size", 1)
-				.build()).stream().findFirst();
+				.queryParam("category_group_code", category).queryParam("x", lng).queryParam("y", lat)
+				.queryParam("radius", radius).queryParam("sort", "distance").queryParam("size", 3)
+				.build());
 	}
 
 	// turns a typed place such as "성수동" into coordinates

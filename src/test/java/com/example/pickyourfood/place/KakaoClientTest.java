@@ -68,17 +68,23 @@ class KakaoClientTest {
 	}
 
 	@Test
-	void nearestSendsCategorySearchSortedByDistance() {
+	void nearbySendsCategorySearchAndReturnsTheNearestThree() {
 		server.expect(requestTo(containsString("https://dapi.kakao.com/v2/local/search/category.json")))
 				.andExpect(queryParam("category_group_code", "CE7"))
 				.andExpect(queryParam("x", "127.05"))
 				.andExpect(queryParam("y", "37.54"))
 				.andExpect(queryParam("radius", "500"))
 				.andExpect(queryParam("sort", "distance"))
-				.andExpect(queryParam("size", "1"))
-				.andRespond(withSuccess(ONE_PLACE, MediaType.APPLICATION_JSON));
+				.andExpect(queryParam("size", "3"))
+				.andRespond(withSuccess("""
+						{"documents":[
+						{"id":"1","place_name":"어니언","category_name":"음식점 > 카페","address_name":"","road_address_name":"서울 성동구 1",
+						"x":"127.051","y":"37.541","distance":"120","place_url":"http://place.map.kakao.com/1"},
+						{"id":"2","place_name":"대림창고","category_name":"음식점 > 카페","address_name":"","road_address_name":"서울 성동구 2",
+						"x":"127.052","y":"37.542","distance":"260","place_url":"http://place.map.kakao.com/2"}]}""",
+						MediaType.APPLICATION_JSON));
 
-		assertThat(kakao.nearest(KakaoClient.CAFE, 37.54, 127.05, 500)).map(KakaoPlace::id).hasValue("26338954");
+		assertThat(kakao.nearby(KakaoClient.CAFE, 37.54, 127.05, 500)).extracting(KakaoPlace::id).containsExactly("1", "2");
 		server.verify();
 	}
 

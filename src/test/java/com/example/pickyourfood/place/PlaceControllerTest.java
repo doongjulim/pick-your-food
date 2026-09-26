@@ -30,7 +30,7 @@ class PlaceControllerTest {
 	PlaceService places;
 
 	private static PlacesResponse empty(Origin origin) {
-		return new PlacesResponse(origin, List.of(), List.of(), null);
+		return new PlacesResponse(origin, List.of(), List.of(), List.of());
 	}
 
 	@Test
@@ -41,7 +41,8 @@ class PlaceControllerTest {
 		mvc.perform(get("/api/places").param("food", "탄탄멘").param("lat", "37.54").param("lng", "127.05"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.origin.name").value("현재 위치"))
-				.andExpect(jsonPath("$.nearby").isArray());
+				.andExpect(jsonPath("$.nearby").isArray())
+				.andExpect(jsonPath("$.dateCourses").isArray());
 		verify(places).search("탄탄멘", here);
 	}
 

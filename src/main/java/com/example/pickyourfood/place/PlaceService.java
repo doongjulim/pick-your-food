@@ -3,12 +3,17 @@ package com.example.pickyourfood.place;
 import com.example.pickyourfood.place.GooglePlacesClient.GoogleInfo;
 import com.example.pickyourfood.place.KakaoClient.KakaoPlace;
 import com.example.pickyourfood.place.PlacesResponse.DateCourse;
+import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
 import com.example.pickyourfood.place.PlacesResponse.Spot;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -35,6 +41,10 @@ public class PlaceService {
 	static final int MATCH_METERS = 200;
 	static final int CAFE_RADIUS = 500;
 	static final int SIGHT_RADIUS = 1_000;
+	static final int COURSES = 3;
+	// about 4km/h
+	static final int WALK_METERS_PER_MINUTE = 67;
+	static final String ROUTE_BASE = "https://map.kakao.com/link/by/walk/";
 	static final Duration CACHE_TTL = Duration.ofHours(24);
 
 	// most reviews first, then best rating; places Google does not know go last
@@ -49,7 +59,7 @@ public class PlaceService {
 	// ponytail: unbounded map, entries only expire when read again; swap for Caffeine if memory grows
 	private final Map<String, Cached> cache = new ConcurrentHashMap<>();
 	private final ExecutorService pool = Executors.newFixedThreadPool(10, task -> {
-		Thread thread = new Thread(task, "google-places");
+		Thread thread = new Thread(task, "place-lookups");
 		thread.setDaemon(true);
 		return thread;
 	});
@@ -79,7 +89,7 @@ public class PlaceService {
 		List<Place> nearby = nearbyLookups.stream().map(CompletableFuture::join).toList();
 		List<Place> famous = famousLookups.stream().map(CompletableFuture::join).sorted(FAMOUS_ORDER).toList();
 
-		return new PlacesResponse(origin, nearby, famous, dateCourse(famous));
+		return new PlacesResponse(origin, nearby, famous, dateCourses(famous));
 	}
 
 	private CompletableFuture<Place> enrichAsync(KakaoPlace place) {
@@ -110,18 +120,69 @@ public class PlaceService {
 				info.map(GoogleInfo::url).orElse(null));
 	}
 
-	private DateCourse dateCourse(List<Place> famous) {
-		if (famous.isEmpty()) return null;
-		Place restaurant = famous.get(0);
-		return new DateCourse(restaurant,
-				spot(KakaoClient.CAFE, restaurant, CAFE_RADIUS),
-				spot(KakaoClient.SIGHT, restaurant, SIGHT_RADIUS));
+	private List<DateCourse> dateCourses(List<Place> famous) {
+		List<Place> restaurants = famous.stream().limit(COURSES).toList();
+		// start every Kakao lookup before waiting on any of them
+		List<CompletableFuture<List<KakaoPlace>>> cafes = restaurants.stream()
+				.map(restaurant -> candidatesAsync(KakaoClient.CAFE, restaurant, CAFE_RADIUS)).toList();
+		List<CompletableFuture<List<KakaoPlace>>> sights = restaurants.stream()
+				.map(restaurant -> candidatesAsync(KakaoClient.SIGHT, restaurant, SIGHT_RADIUS)).toList();
+		// picked in course order, so an earlier course keeps its nearest spot
+		Set<String> used = new HashSet<>();
+		List<DateCourse> courses = new ArrayList<>();
+		for (int i = 0; i < restaurants.size(); i++) {
+			Spot cafe = pick(cafes.get(i).join(), used);
+			Spot sight = pick(sights.get(i).join(), used);
+			courses.add(course(restaurants.get(i), cafe, sight));
+		}
+		return courses;
 	}
 
-	private Spot spot(String category, Place from, int radius) {
-		return kakao.nearest(category, from.lat(), from.lng(), radius)
-				.map(found -> new Spot(found.name(), found.category(), found.address(), found.distanceMeters(), found.url()))
+	private CompletableFuture<List<KakaoPlace>> candidatesAsync(String category, Place from, int radius) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				return kakao.nearby(category, from.lat(), from.lng(), radius);
+			} catch (RuntimeException e) {
+				// the course just leaves this step empty
+				log.warn("Kakao {} search failed near {}: {}", category, from.name(), e.getMessage());
+				return List.of();
+			}
+		}, pool);
+	}
+
+	// nearest candidate no earlier course uses; when every one is taken, the nearest anyway
+	private static Spot pick(List<KakaoPlace> candidates, Set<String> used) {
+		return candidates.stream().filter(found -> !used.contains(found.id())).findFirst()
+				.or(() -> candidates.stream().findFirst())
+				.map(found -> {
+					used.add(found.id());
+					return new Spot(found.id(), found.name(), found.category(), found.address(), found.lat(), found.lng(), found.url());
+				})
 				.orElse(null);
+	}
+
+	private static DateCourse course(Place restaurant, Spot cafe, Spot sight) {
+		List<Stop> stops = new ArrayList<>();
+		stops.add(new Stop(restaurant.name(), restaurant.lat(), restaurant.lng()));
+		if (cafe != null) stops.add(new Stop(cafe.name(), cafe.lat(), cafe.lng()));
+		if (sight != null) stops.add(new Stop(sight.name(), sight.lat(), sight.lng()));
+		List<Leg> legs = IntStream.range(1, stops.size()).mapToObj(i -> leg(stops.get(i - 1), stops.get(i))).toList();
+		String routeUrl = legs.isEmpty() ? null
+				: ROUTE_BASE + stops.stream()
+						.map(stop -> routeName(stop.name()) + "," + stop.lat() + "," + stop.lng())
+						.collect(Collectors.joining("/"));
+		return new DateCourse(restaurant, cafe, sight, legs, routeUrl);
+	}
+
+	private static Leg leg(Stop from, Stop to) {
+		int meters = meters(from.lat(), from.lng(), to.lat(), to.lng());
+		int minutes = Math.max(1, (int) Math.ceil(meters / (double) WALK_METERS_PER_MINUTE));
+		return new Leg(from.name(), to.name(), meters, minutes);
+	}
+
+	// ',' and '/' separate the link's parts, so names lose them before encoding
+	private static String routeName(String name) {
+		return URLEncoder.encode(name.replace(',', ' ').replace('/', ' '), StandardCharsets.UTF_8).replace("+", "%20");
 	}
 
 	// haversine distance
@@ -131,6 +192,9 @@ public class PlaceService {
 		double a = Math.pow(Math.sin(dLat / 2), 2)
 				+ Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.pow(Math.sin(dLng / 2), 2);
 		return (int) Math.round(2 * 6_371_000 * Math.asin(Math.sqrt(a)));
+	}
+
+	private record Stop(String name, double lat, double lng) {
 	}
 
 	private record Cached(Optional<GoogleInfo> info, Instant at) {

@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 
 import com.example.pickyourfood.place.GooglePlacesClient.GoogleInfo;
 import com.example.pickyourfood.place.KakaoClient.KakaoPlace;
+import com.example.pickyourfood.place.PlacesResponse.DateCourse;
+import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
 import java.util.List;
@@ -57,6 +59,31 @@ class PlaceServiceTest {
 	// the service searches Google with "<name> <address>"; names in these tests are the ids
 	private void googleKnows(String id, GoogleInfo info) {
 		when(google.find(startsWith(id + " "), anyDouble(), anyDouble())).thenReturn(Optional.of(info));
+	}
+
+	// latitudes of the famous places in rank order, all at longitude 127.05
+	private static final double[] RANKED_LATS = { 37.56, 37.57, 37.58, 37.59 };
+
+	// famous places ranked in the given order: the first has the most reviews
+	private void famousRanked(String... ids) {
+		KakaoPlace[] places = new KakaoPlace[ids.length];
+		for (int i = 0; i < ids.length; i++) {
+			places[i] = place(ids[i], RANKED_LATS[i]);
+			googleKnows(ids[i], info(RANKED_LATS[i], 4.0, 1000 - i * 100));
+		}
+		famousCandidatesAre(places);
+	}
+
+	private static KakaoPlace spot(String id, double lat) {
+		return new KakaoPlace(id, id, "카페", "주소 " + id, lat, 127.05, 0, "https://place.map.kakao.com/" + id);
+	}
+
+	private void cafesNear(double lat, KakaoPlace... found) {
+		when(kakao.nearby(KakaoClient.CAFE, lat, 127.05, PlaceService.CAFE_RADIUS)).thenReturn(List.of(found));
+	}
+
+	private void sightsNear(double lat, KakaoPlace... found) {
+		when(kakao.nearby(KakaoClient.SIGHT, lat, 127.05, PlaceService.SIGHT_RADIUS)).thenReturn(List.of(found));
 	}
 
 	@Test
@@ -123,29 +150,115 @@ class PlaceServiceTest {
 	}
 
 	@Test
-	void dateCourseStartsAtTheTopFamousPlace() {
-		famousCandidatesAre(place("second", 37.55), place("top", 37.56));
-		googleKnows("second", info(37.55, 4.0, 10));
-		googleKnows("top", info(37.56, 4.0, 900));
-		when(kakao.nearest(KakaoClient.CAFE, 37.56, 127.05, PlaceService.CAFE_RADIUS))
-				.thenReturn(Optional.of(new KakaoPlace("c", "어니언", "카페", "카페 주소", 37.561, 127.05, 320, "https://place.map.kakao.com/c")));
+	void threeCoursesStartAtTheTopThreeFamousPlaces() {
+		famousRanked("r1", "r2", "r3", "r4");
 
-		PlacesResponse.DateCourse course = service.search("ramen", ORIGIN).dateCourse();
+		List<DateCourse> courses = service.search("ramen", ORIGIN).dateCourses();
 
-		assertThat(course.restaurant().id()).isEqualTo("top");
-		assertThat(course.cafe().name()).isEqualTo("어니언");
-		assertThat(course.cafe().distanceMeters()).isEqualTo(320);
-		assertThat(course.sight()).isNull();
-		verify(kakao).nearest(KakaoClient.SIGHT, 37.56, 127.05, PlaceService.SIGHT_RADIUS);
+		assertThat(courses).extracting(course -> course.restaurant().id()).containsExactly("r1", "r2", "r3");
+		verify(kakao).nearby(KakaoClient.CAFE, 37.58, 127.05, PlaceService.CAFE_RADIUS);
+		verify(kakao).nearby(KakaoClient.SIGHT, 37.58, 127.05, PlaceService.SIGHT_RADIUS);
+		verify(kakao, never()).nearby(anyString(), eq(37.59), anyDouble(), anyInt());
 	}
 
 	@Test
-	void noFamousPlacesMeansNoDateCourse() {
+	void twoFamousPlacesMakeTwoCourses() {
+		famousRanked("r1", "r2");
+
+		assertThat(service.search("ramen", ORIGIN).dateCourses()).hasSize(2);
+	}
+
+	@Test
+	void noFamousPlacesMeansNoCourses() {
 		PlacesResponse response = service.search("ramen", ORIGIN);
 
 		assertThat(response.famous()).isEmpty();
-		assertThat(response.dateCourse()).isNull();
-		verify(kakao, never()).nearest(anyString(), anyDouble(), anyDouble(), anyInt());
+		assertThat(response.dateCourses()).isEmpty();
+		verify(kakao, never()).nearby(anyString(), anyDouble(), anyDouble(), anyInt());
+	}
+
+	@Test
+	void laterCourseSkipsACafeAnEarlierCourseUses() {
+		famousRanked("r1", "r2");
+		cafesNear(37.56, spot("shared", 37.561));
+		cafesNear(37.57, spot("shared", 37.561), spot("own", 37.572));
+
+		List<DateCourse> courses = service.search("ramen", ORIGIN).dateCourses();
+
+		assertThat(courses).extracting(course -> course.cafe().id()).containsExactly("shared", "own");
+	}
+
+	@Test
+	void everyCandidateTakenFallsBackToTheNearest() {
+		famousRanked("r1", "r2");
+		cafesNear(37.56, spot("shared", 37.565));
+		cafesNear(37.57, spot("shared", 37.565));
+
+		List<DateCourse> courses = service.search("ramen", ORIGIN).dateCourses();
+
+		assertThat(courses).extracting(course -> course.cafe().id()).containsExactly("shared", "shared");
+	}
+
+	@Test
+	void legsMeasureWalkingDistanceRoundedUpToAMinute() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564)); // 445m from the restaurant
+		sightsNear(37.56, spot("sight", 37.569)); // 556m from the cafe
+
+		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
+
+		assertThat(course.legs()).containsExactly(new Leg("r1", "cafe", 445, 7), new Leg("cafe", "sight", 556, 9));
+	}
+
+	@Test
+	void withoutACafeTheSightIsReachedFromTheRestaurant() {
+		famousRanked("r1");
+		sightsNear(37.56, spot("sight", 37.56)); // same spot: 0m still takes a minute
+
+		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
+
+		assertThat(course.cafe()).isNull();
+		assertThat(course.legs()).containsExactly(new Leg("r1", "sight", 0, 1));
+		assertThat(course.routeUrl()).isNotNull();
+	}
+
+	@Test
+	void restaurantOnlyCourseHasNoLegsOrRoute() {
+		famousRanked("r1");
+
+		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
+
+		assertThat(course.cafe()).isNull();
+		assertThat(course.sight()).isNull();
+		assertThat(course.legs()).isEmpty();
+		assertThat(course.routeUrl()).isNull();
+	}
+
+	@Test
+	void failedCafeSearchLeavesOnlyThatStepEmpty() {
+		famousRanked("r1");
+		when(kakao.nearby(KakaoClient.CAFE, 37.56, 127.05, PlaceService.CAFE_RADIUS))
+				.thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY));
+		sightsNear(37.56, spot("sight", 37.569));
+
+		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
+
+		assertThat(course.cafe()).isNull();
+		assertThat(course.sight().id()).isEqualTo("sight");
+	}
+
+	@Test
+	void routeUrlListsStopsInOrderWithEncodedNames() {
+		famousRanked("탄탄 집");
+		cafesNear(37.56, spot("a,b/c", 37.564));
+		sightsNear(37.56, spot("서울숲", 37.569));
+
+		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
+
+		assertThat(course.routeUrl()).isEqualTo("https://map.kakao.com/link/by/walk/"
+				+ "%ED%83%84%ED%83%84%20%EC%A7%91,37.56,127.05/"
+				+ "a%20b%20c,37.564,127.05/"
+				+ "%EC%84%9C%EC%9A%B8%EC%88%B2,37.569,127.05");
 	}
 
 	@Test
