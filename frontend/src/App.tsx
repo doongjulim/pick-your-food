@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import ModeSelect from './features/mode-select/ModeSelect.tsx'
+import PlacesSection from './features/places/PlacesSection.tsx'
 import { fetchRandom } from './features/random/api.ts'
 import { fetchRecommendation } from './features/recommendation/api.ts'
 import type { Recommendation } from './features/recommendation/api.ts'
@@ -63,17 +64,20 @@ export default function App() {
           {screen === 'home' && <ModeSelect onRandom={drawRandom} onSurvey={() => setScreen('survey')} />}
           {screen === 'survey' && <Questionnaire onComplete={recommend} onExit={goHome} />}
           {(screen === 'random' || screen === 'recommend') && (
-            <ResultView
-              title={screen === 'random' ? '오늘의 랜덤 메뉴' : '당신에게 딱 맞는 메뉴'}
-              status={result.status}
-              best={result.status === 'done' ? result.best : undefined}
-              alternatives={result.status === 'done' ? result.alternatives : []}
-              roll={screen === 'random'}
-              againLabel={screen === 'random' ? '다시 뽑기' : '다시 하기'}
-              onAgain={screen === 'random' ? drawRandom : () => setScreen('survey')}
-              onRetry={() => lastRequest.current()}
-              onHome={goHome}
-            />
+            <>
+              <ResultView
+                title={screen === 'random' ? '오늘의 랜덤 메뉴' : '당신에게 딱 맞는 메뉴'}
+                status={result.status}
+                best={result.status === 'done' ? result.best : undefined}
+                alternatives={result.status === 'done' ? result.alternatives : []}
+                roll={screen === 'random'}
+                againLabel={screen === 'random' ? '다시 뽑기' : '다시 하기'}
+                onAgain={screen === 'random' ? drawRandom : () => setScreen('survey')}
+                onRetry={() => lastRequest.current()}
+                onHome={goHome}
+              />
+              {result.status === 'done' && <PlacesSection food={result.best.name} />}
+            </>
           )}
         </motion.div>
       </AnimatePresence>
