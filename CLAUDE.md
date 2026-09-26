@@ -14,8 +14,8 @@ Code lives in the package `com.example.pickyourfood` (`src/main/java`, tests in 
 
 Always package by feature, never by layer (no `controller/`, `service/`, `components/`, `api/` folders).
 A new feature gets its own folder holding its controller, logic, types and API calls; its tests mirror that path.
-- Backend: `com.example.pickyourfood.<feature>` — `food` (catalog + tags), `random`, `recommendation`.
-- Frontend: `frontend/src/features/<feature>/` — `mode-select`, `random`, `recommendation`.
+- Backend: `com.example.pickyourfood.<feature>` — `food` (catalog + tags), `random`, `recommendation`, `place` (restaurant info via Kakao + Google).
+- Frontend: `frontend/src/features/<feature>/` — `mode-select`, `random`, `recommendation`, `places`.
 - Only code used by two or more features goes in `food` (backend) or `frontend/src/shared/`. Features must not import from each other.
 
 
