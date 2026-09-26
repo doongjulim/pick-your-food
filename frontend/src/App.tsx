@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
+import AccountMenu from './features/account/AccountMenu.tsx'
 import ModeSelect from './features/mode-select/ModeSelect.tsx'
 import PlacesSection from './features/places/PlacesSection.tsx'
 import { fetchRandom } from './features/random/api.ts'
@@ -51,7 +52,8 @@ export default function App() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-6xl items-center px-4 py-8 md:px-12">
+    <main className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl items-center px-4 pb-8 pt-20 md:px-12">
+      <AccountMenu />
       <AnimatePresence mode="wait">
         <motion.div
           key={screen === 'home' || screen === 'survey' ? screen : `${screen}-${attempt}`}
