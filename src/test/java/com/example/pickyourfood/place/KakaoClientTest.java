@@ -59,6 +59,15 @@ class KakaoClientTest {
 	}
 
 	@Test
+	void typedQueryWithUriCharactersIsEncodedAsText() {
+		server.expect(requestTo(containsString("query=a%7Bb%7D%2Bc%26d%3De")))
+				.andRespond(withSuccess("{\"documents\":[]}", MediaType.APPLICATION_JSON));
+
+		assertThat(kakao.locate("a{b}+c&d=e")).isEmpty();
+		server.verify();
+	}
+
+	@Test
 	void nearestSendsCategorySearchSortedByDistance() {
 		server.expect(requestTo(containsString("https://dapi.kakao.com/v2/local/search/category.json")))
 				.andExpect(queryParam("category_group_code", "CE7"))

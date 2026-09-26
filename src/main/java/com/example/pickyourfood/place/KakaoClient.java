@@ -37,14 +37,14 @@ public class KakaoClient {
 
 	public List<KakaoPlace> restaurants(String query, double lat, double lng, int radius, String sort, int size) {
 		return search(uri -> uri.path("/v2/local/search/keyword.json")
-				.queryParam("query", query)
+				.queryParam("query", "{query}")
 				.queryParam("category_group_code", RESTAURANT)
 				.queryParam("x", lng)
 				.queryParam("y", lat)
 				.queryParam("radius", radius)
 				.queryParam("sort", sort)
 				.queryParam("size", size)
-				.build());
+				.build(query));
 	}
 
 	public Optional<KakaoPlace> nearest(String category, double lat, double lng, int radius) {
@@ -61,11 +61,12 @@ public class KakaoClient {
 	// turns a typed place such as "성수동" into coordinates
 	public Optional<KakaoPlace> locate(String query) {
 		return search(uri -> uri.path("/v2/local/search/keyword.json")
-				.queryParam("query", query)
+				.queryParam("query", "{query}")
 				.queryParam("size", 1)
-				.build()).stream().findFirst();
+				.build(query)).stream().findFirst();
 	}
 
+	// typed text goes in as a URI variable so "{", "+" and "&" are encoded instead of parsed
 	private List<KakaoPlace> search(Function<UriBuilder, URI> uri) {
 		if (key.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "KAKAO_REST_KEY is not set");
 		try {
