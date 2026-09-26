@@ -1,6 +1,8 @@
-package com.example.pickyourfood.food;
+package com.example.pickyourfood.recommendation;
 
-import com.example.pickyourfood.food.Answers.Category;
+import com.example.pickyourfood.food.Food;
+import com.example.pickyourfood.food.Food.Category;
+import com.example.pickyourfood.food.FoodCatalog;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,10 +30,6 @@ public class Recommender {
 	Recommender(List<Food> foods, Random random) {
 		this.foods = foods;
 		this.random = random;
-	}
-
-	public Food random() {
-		return foods.get(random.nextInt(foods.size()));
 	}
 
 	public Recommendation recommend(Answers answers) {

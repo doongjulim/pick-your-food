@@ -1,10 +1,5 @@
 package com.example.pickyourfood.food;
 
-import com.example.pickyourfood.food.Answers.Category;
-import com.example.pickyourfood.food.Answers.Hunger;
-import com.example.pickyourfood.food.Answers.Mood;
-import com.example.pickyourfood.food.Answers.Situation;
-import com.example.pickyourfood.food.Answers.Taste;
 import java.util.Set;
 
 public record Food(
@@ -16,4 +11,15 @@ public record Food(
 		Set<Mood> moods,
 		Set<Hunger> hunger,
 		Set<Taste> tastes) {
+
+	public enum Situation { ALONE, FRIENDS, DATE, GROUP }
+
+	public enum Mood { EXCITED, NORMAL, DOWN, STRESSED }
+
+	// ANY is only an answer ("no preference"); no food is tagged with it
+	public enum Category { KOREAN, CHINESE, JAPANESE, WESTERN, SNACK, ANY }
+
+	public enum Hunger { LIGHT, MODERATE, STARVING }
+
+	public enum Taste { SPICY, MILD, RICH, SWEET_SOUR }
 }

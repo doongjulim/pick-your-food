@@ -1,13 +1,15 @@
-package com.example.pickyourfood.food;
+package com.example.pickyourfood.recommendation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.example.pickyourfood.food.Answers.Category;
-import com.example.pickyourfood.food.Answers.Hunger;
-import com.example.pickyourfood.food.Answers.Mood;
-import com.example.pickyourfood.food.Answers.Situation;
-import com.example.pickyourfood.food.Answers.Taste;
-import com.example.pickyourfood.food.Recommender.Recommendation;
+import com.example.pickyourfood.food.Food.Category;
+import com.example.pickyourfood.food.Food.Hunger;
+import com.example.pickyourfood.food.Food.Mood;
+import com.example.pickyourfood.food.Food.Situation;
+import com.example.pickyourfood.food.Food.Taste;
+import com.example.pickyourfood.food.Food;
+import com.example.pickyourfood.food.FoodCatalog;
+import com.example.pickyourfood.recommendation.Recommender.Recommendation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -100,12 +102,5 @@ class RecommenderTest {
 			result.alternatives().forEach(food -> ids.add(food.id()));
 			assertThat(ids).as(answers.toString()).hasSize(3).doesNotHaveDuplicates();
 		});
-	}
-
-	@Test
-	void randomPicksFromTheCatalog() {
-		List<Food> foods = List.of(food("only", Category.KOREAN, Mood.DOWN, Taste.SPICY));
-
-		assertThat(new Recommender(foods, new Random()).random().id()).isEqualTo("only");
 	}
 }

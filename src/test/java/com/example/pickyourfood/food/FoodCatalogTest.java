@@ -2,7 +2,7 @@ package com.example.pickyourfood.food;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.example.pickyourfood.food.Answers.Category;
+import com.example.pickyourfood.food.Food.Category;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;

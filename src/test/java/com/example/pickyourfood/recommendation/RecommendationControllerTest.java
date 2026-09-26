@@ -1,6 +1,5 @@
-package com.example.pickyourfood.food;
+package com.example.pickyourfood.recommendation;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -15,20 +14,13 @@ import org.springframework.test.web.servlet.ResultActions;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class FoodControllerTest {
+class RecommendationControllerTest {
 
 	@Autowired
 	MockMvc mvc;
 
 	private ResultActions postRecommendation(String body) throws Exception {
 		return mvc.perform(post("/api/recommendations").contentType(MediaType.APPLICATION_JSON).content(body));
-	}
-
-	@Test
-	void randomReturnsAFood() throws Exception {
-		mvc.perform(get("/api/foods/random"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.name").isString());
 	}
 
 	@Test
