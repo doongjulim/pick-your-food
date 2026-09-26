@@ -54,7 +54,7 @@
 
 - `Place`: `id`, `name`, `address`, `distanceMeters`, `lat`, `lng`, `kakaoUrl`. (`GET /api/places`의 `Place`에서 Google 필드를 뺀 것)
 - `Spot`, `Leg`, `DateCourse`: C1과 같은 필드. `DateCourse.restaurant`는 위 `Place`.
-- 응답에서 저장 결과를 돌려줄 때 `Place`의 `rating`·`reviewCount`·`priceLevel`·`googleUrl`은 `null`, `reviews`는 `[]`로 채워 기존 화면 타입과 맞춘다.
+- API는 저장한 모양 그대로 돌려준다(Google 필드 없음). 프론트엔드가 읽을 때 `rating`·`reviewCount`·`priceLevel`·`googleUrl`은 `null`, `reviews`는 `[]`로 채워 기존 표 타입과 맞춘다.
 
 ### DB (`V3__saved_result.sql`)
 
@@ -84,9 +84,8 @@ index (account_id, created_at)
 | `DELETE /api/saved/{id}` | 필요, CSRF 헤더 필요 | 내 것 `204` / 남의 것·없음 `404`(존재 여부를 알리지 않음) |
 
 요청 검증(`400`):
-- `title`(1~100자), `best`(`id`·`name` 필수) 필수.
-- 상한: 대안 5개, 근교·유명 각 10곳, 코스 3개, 코스당 구간 2개, 저장할 JSON 64KB.
-- 문자열 필드는 100자(주소·URL은 500자) 이하.
+- `title`(1~100자), `best`(`id`·`name` 필수, 이름 100자 이하) 필수. 맛집이 있으면 `origin.name` 필수(200자 이하). 이 셋은 목록용 열이라 열 크기에 맞춘다.
+- 상한: 대안 5개, 근교·유명 각 10곳, 코스 3개, 코스당 구간 2개, 목록 안 `null` 금지, 저장할 JSON 64KB. 나머지 문자열 길이는 64KB 상한이 막는다(새 의존성 없이 필드마다 검사하지 않는다).
 
 범위 밖(나중에): 목록 페이지 나누기, 계정당 저장 개수 상한.
 
@@ -94,7 +93,7 @@ index (account_id, created_at)
 
 ### 공용으로 옮기기
 
-`SavedView`도 맛집 표·데이트 코스를 그려야 하므로 `features/places/`의 `PlaceTable.tsx`, `DateCourses.tsx`, `MapLink.tsx`, `format.ts`와 장소 타입(`Review`, `Place`, `Spot`, `Leg`, `DateCourse`, `Places`)을 `shared/places/`로 옮긴다(내용 변경 없음). `features/places/`에는 `PlacesSection.tsx`와 `fetchPlaces`·`Where`만 남는다. 저장본의 Google 필드는 `null`이라 표는 기존 "Google 정보 없음" 표시를 그대로 쓴다.
+`SavedView`도 맛집 표·데이트 코스를 그려야 하므로 `features/places/`의 `PlaceTable.tsx`, `DateCourses.tsx`, `MapLink.tsx`, `format.ts`와 장소 타입(`Review`, `Place`, `Spot`, `Leg`, `DateCourse`, `Places`)을 `shared/places/`로 옮긴다(내용 변경 없음). `features/places/`에는 `PlacesSection.tsx`와 `fetchPlaces`·`Where`만 남는다. 저장본의 Google 필드는 비어 있어 표는 기존 빈 값 표시(`—`, "리뷰 정보가 없어요.")를 그대로 쓴다.
 
 ### `features/saved/`
 
@@ -107,7 +106,7 @@ index (account_id, created_at)
   - 맛집을 새로 찾으면(보낼 결과가 바뀌면) `저장하기`로 돌아간다.
 - `SavedView.tsx`(`/s/{id}`):
   - "저장한 결과 · 9월 26일", 제목, 메뉴와 대안, 맛집이 있으면 "{위치} 기준" 근교·유명 표와 데이트 코스(읽기 전용).
-  - 버튼: `링크 공유`, `처음으로`, 내 것(`mine`)이면 `삭제` → "이 결과를 지울까요? 링크도 더 이상 열리지 않아요." 확인 → 목록으로.
+  - 버튼: `링크 공유`, `처음으로`, 내 것(`mine`)이면 `삭제` → 브라우저 확인 창 "이 결과를 지울까요? 링크도 더 이상 열리지 않아요." → 목록으로. 목록의 삭제도 같은 확인 창.
   - 불러오는 중 자리표시, `404`면 "이 결과를 찾을 수 없어요. 삭제되었거나 주소가 잘못됐어요." + `처음으로`, 그 밖의 오류는 다시 시도 버튼.
 - `SavedList.tsx`(`/saved`):
   - 행마다 메뉴 이름, 제목, "{위치} 기준"(없으면 생략), 날짜, 삭제 버튼. 행을 누르면 `SavedView`.
@@ -117,8 +116,8 @@ index (account_id, created_at)
 
 ### 로그인 후 이어서 저장
 
-앱 시작 시 보관된 결과가 있으면:
-- 주소에 `?login=failed`가 있으면 보관분을 지우고 끝(기존 실패 안내는 `AccountMenu`가 보인다).
+앱 시작 시 보관된 결과가 있으면(보관분은 꺼내는 즉시 지운다):
+- 주소에 `?login=failed`가 있으면(`AccountMenu`가 주소에서 지우기 전에, 모듈을 읽을 때 확인한다) 보관분을 지우고 끝(기존 실패 안내는 `AccountMenu`가 보인다).
 - 아니면 저장 요청 → 성공: 보관분 삭제, `/s/{id}`로 이동하고 "저장했어요". `401`(로그인 안 됨)·기타 실패: 보관분 삭제, 처음 화면에 "저장하지 못했어요. 다시 시도해 주세요."
 
 ### 수정
@@ -138,10 +137,10 @@ index (account_id, created_at)
 
 백엔드(`./gradlew test`, 실제 키 불필요, 인메모리 H2 + V3):
 - `SavedControllerTest`(MockMvc, `RANDOM_PORT`, 로그인은 C2a처럼 세션 테이블의 실제 세션, CSRF는 실제 `XSRF-TOKEN` 쿠키):
-  - 비로그인 저장 `401`, CSRF 없음 `403`, 로그인 + CSRF `201` + 22자 id.
-  - Google 필드·모르는 필드를 넣어 저장해도 다시 읽으면 Google 값은 `null`/`[]`이고 모르는 필드는 없다.
+  - 비로그인 저장(CSRF 헤더는 있음) `401`, 로그인했지만 CSRF 없음 `403`, 로그인 + CSRF `201` + 22자 id.
+  - Google 필드·모르는 필드를 넣어 저장해도 다시 읽은 응답과 DB의 JSON에 Google 값·모르는 필드가 없다.
   - 맛집 없이 메뉴만 저장.
-  - `400`: `best` 없음, 대안 6개, 근교 11곳, 코스 4개, 64KB 초과.
+  - `400`: `best` 없음, `title` 없음, 대안 6개, 근교 11곳, 유명 11곳, 코스 4개, 64KB 초과.
   - 비로그인 `GET /api/saved/{id}` `200` + `mine=false`, 주인 `mine=true`, 없는 id `404`.
   - 목록은 내 것만 최신순.
   - 남의 결과 삭제 `404`(남아 있음), 내 결과 삭제 `204` 후 링크 `404`.
@@ -151,11 +150,12 @@ index (account_id, created_at)
 - `save`: 로그인 상태로 뽑기 → 맛집 찾기 → 저장. 요청 본문에 Google 필드 없음, `X-XSRF-TOKEN` 있음, `저장했어요` + `링크 공유` → 클립보드에 `/s/{id}`.
 - `pending`: 비로그인 저장 → `401` → 보관 + 카카오 주소로 이동. 로그인 상태로 다시 열면 자동 저장 후 `/s/{id}`에 "저장했어요".
 - `pending-failed`: 보관분 + `?login=failed` → 보관분 삭제, 저장 요청 없음.
-- `view`: 비로그인 `/s/{id}` → 메뉴, "{위치} 기준" 표, 코스 탭, 삭제 버튼 없음. 없는 id 안내.
+- `view`: 비로그인 `/s/{id}` → 메뉴, "{위치} 기준" 표, 코스 탭, 삭제 버튼 없음, `처음으로` → `/`.
 - `mine`: 내 결과 삭제 → 확인 → 목록.
-- `list`: 계정 메뉴 → `저장한 결과` → 행 → 해당 결과 → 뒤로가기로 목록. 빈 목록 안내.
-- `mobile`: 375px에서 결과·목록 가로 스크롤 없음.
-- C1 데이트 코스 브라우저 확인(`courses`, `single`, `none`, `mobile`)을 다시 돌려 공용 이동으로 깨진 곳이 없는지 본다.
+- `list`: 행 → 해당 결과 → 뒤로가기로 목록, 행 삭제, 계정 메뉴 → `저장한 결과`로 목록.
+- `empty`: 빈 목록 안내. `missing`: 없는 id 안내.
+- `mobile`: 375px에서 결과·목록·저장 결과 가로 스크롤 없음.
+- 공용 이동으로 맛집 표·데이트 코스가 깨지지 않았는지는 `save`(맛집 찾기 화면)와 `view`(저장 결과 화면)가 코스 탭까지 확인한다.
 
 실제 카카오 로그인을 거친 저장은 키 설정 후 사용자가 직접 확인한다.
 
