@@ -4,7 +4,7 @@ import type { FormEvent } from 'react'
 import { HttpError } from '../../shared/api.ts'
 import { fetchPlaces } from './api.ts'
 import type { Places, Where } from './api.ts'
-import DateCourse from './DateCourse.tsx'
+import DateCourses from './DateCourses.tsx'
 import PlaceTable from './PlaceTable.tsx'
 
 type State = { status: 'idle' | 'locating' | 'loading' | 'error' } | { status: 'done'; data: Places }
@@ -131,9 +131,9 @@ export default function PlacesSection({ food }: { food: string }) {
             <div className="mt-6">
               <PlaceTable food={food} nearby={state.data.nearby} famous={state.data.famous} />
             </div>
-            {state.data.dateCourse && (
+            {state.data.dateCourses.length > 0 && (
               <div className="mt-16">
-                <DateCourse course={state.data.dateCourse} />
+                <DateCourses courses={state.data.dateCourses} />
               </div>
             )}
           </>
