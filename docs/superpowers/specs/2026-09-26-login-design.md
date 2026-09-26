@@ -65,6 +65,7 @@
 - 기존 API(`/api/foods/**`, `/api/recommendations`, `/api/places`)와 정적 경로는 누구나.
 - 그 밖의 `/api/**`에서 로그인이 필요한데 안 된 요청은 로그인 페이지로 보내지 않고 `401`.
 - CSRF: Spring Security SPA 방식(`XSRF-TOKEN` 쿠키 → `X-XSRF-TOKEN` 헤더). GET은 검사하지 않는다.
+  - `POST /api/recommendations`는 계정·세션을 쓰지 않는 계산이라 CSRF 검사에서 뺀다(기존 동작과 테스트 유지).
 
 ### 개발 설정
 
@@ -99,7 +100,7 @@
 - `AccountControllerTest`(MockMvc):
   - 비로그인 `/api/me` → 401, `oauth2Login()` → `{id, nickname}`.
   - 로그아웃: CSRF 없음 → 403, 있음 → 204, 이후 `/api/me` → 401.
-  - 기존 API는 로그인 없이 200.
+  - 기존 API는 로그인 없이 200(`POST /api/recommendations`는 CSRF 토큰 없이도 200).
   - `/oauth2/authorization/kakao` → `kauth.kakao.com` 리다이렉트, `scope=profile_nickname`.
 - 기존 테스트 50개 통과.
 
