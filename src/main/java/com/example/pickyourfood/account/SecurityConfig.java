@@ -2,6 +2,7 @@ package com.example.pickyourfood.account;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -16,6 +17,8 @@ class SecurityConfig {
 		http
 				.authorizeHttpRequests(requests -> requests
 						.requestMatchers("/api/foods/**", "/api/recommendations", "/api/places").permitAll()
+						// a saved result's link is public; saving, listing and deleting need a login
+						.requestMatchers(HttpMethod.GET, "/api/saved/*").permitAll()
 						.requestMatchers("/api/**").authenticated()
 						.anyRequest().permitAll())
 				// an API call without a login gets 401 instead of a redirect to a login page
