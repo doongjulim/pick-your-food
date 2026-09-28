@@ -2,14 +2,21 @@ import { Crosshair, MapPin } from '@phosphor-icons/react'
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { HttpError } from '../../shared/api.ts'
+import DateCourses from '../../shared/places/DateCourses.tsx'
+import PlaceTable from '../../shared/places/PlaceTable.tsx'
+import type { Places } from '../../shared/places/types.ts'
 import { fetchPlaces } from './api.ts'
-import type { Places, Where } from './api.ts'
-import DateCourses from './DateCourses.tsx'
-import PlaceTable from './PlaceTable.tsx'
+import type { Where } from './api.ts'
 
 type State = { status: 'idle' | 'locating' | 'loading' | 'error' } | { status: 'done'; data: Places }
 
-export default function PlacesSection({ food }: { food: string }) {
+type Props = {
+  food: string
+  // the places on screen: null while searching or before the first search
+  onLoaded: (places: Places | null) => void
+}
+
+export default function PlacesSection({ food, onLoaded }: Props) {
   const [state, setState] = useState<State>({ status: 'idle' })
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
@@ -23,8 +30,13 @@ export default function PlacesSection({ food }: { food: string }) {
     lastWhere.current = where
     setNotice('')
     setState({ status: 'loading' })
+    onLoaded(null)
     fetchPlaces(food, where).then(
-      (data) => id === latest.current && setState({ status: 'done', data }),
+      (data) => {
+        if (id !== latest.current) return
+        setState({ status: 'done', data })
+        onLoaded(data)
+      },
       (error: unknown) => {
         if (id !== latest.current) return
         if (error instanceof HttpError && error.status === 404 && 'near' in where) {

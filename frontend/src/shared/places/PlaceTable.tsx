@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import type { Place } from './api.ts'
+import type { Place } from './types.ts'
 import { distance, summary } from './format.ts'
 import MapLink from './MapLink.tsx'
 

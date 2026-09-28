@@ -1,4 +1,4 @@
-import { CaretDown, SignIn, SignOut } from '@phosphor-icons/react'
+import { BookmarksSimple, CaretDown, SignIn, SignOut } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { fetchMe, logout } from './api.ts'
@@ -8,7 +8,8 @@ type Account = { status: 'checking' } | { status: 'out' } | { status: 'in'; me: 
 
 const spring = { type: 'spring', stiffness: 100, damping: 20 } as const
 
-export default function AccountMenu() {
+// onOpenSaved comes from App: features don't import each other
+export default function AccountMenu({ onOpenSaved }: { onOpenSaved: () => void }) {
   const [account, setAccount] = useState<Account>({ status: 'checking' })
   const [open, setOpen] = useState(false)
   const [loginFailed] = useState(() => new URLSearchParams(location.search).get('login') === 'failed')
@@ -76,8 +77,19 @@ export default function AccountMenu() {
               >
                 <button
                   type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    onOpenSaved()
+                  }}
+                  className="flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.98]"
+                >
+                  <BookmarksSimple size={16} />
+                  저장한 결과
+                </button>
+                <button
+                  type="button"
                   onClick={signOut}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.98]"
+                  className="flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.98]"
                 >
                   <SignOut size={16} />
                   로그아웃

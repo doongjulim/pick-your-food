@@ -1,4 +1,4 @@
-import type { Place } from './api.ts'
+import type { Place } from './types.ts'
 
 export function distance(meters: number): string {
   return meters < 1000 ? `${meters}m` : `${(meters / 1000).toFixed(1)}km`

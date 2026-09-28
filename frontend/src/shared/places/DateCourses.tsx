@@ -2,7 +2,7 @@ import { Coffee, ForkKnife, MapTrifold, Mountains, PersonSimpleWalk } from '@pho
 import type { Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import type { DateCourse, Leg } from './api.ts'
+import type { DateCourse, Leg } from './types.ts'
 import { distance } from './format.ts'
 import MapLink from './MapLink.tsx'
 
