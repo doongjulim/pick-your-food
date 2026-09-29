@@ -9,6 +9,9 @@ Spring Boot 4.1.1 · Java 17 · Gradle
 ./gradlew build     # compile, test and package
 ```
 
+The tests run on H2; `PostgresMigrationTest` also runs the migrations on PostgreSQL when Docker is running.
+Session table SQL differs per database: `db/vendor/{h2,postgresql}/`; everything else goes in `db/migration/`.
+
 ## Layout
 Code lives in the package `com.example.pickyourfood` (`src/main/java`, tests in `src/test/java`).
 
