@@ -1,0 +1,25 @@
+# Render Blueprint: the app as one Docker web service; the database is Neon (set SPRING_DATASOURCE_* in the dashboard)
+services:
+  - type: web
+    name: pick-your-food
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/foods/random
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: KAKAO_REST_KEY
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_PLACES_KEY
+        sync: false
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false

@@ -7,6 +7,7 @@ Spring Boot 4.1.1 · Java 17 · Gradle
 ./gradlew bootRun   # run the app
 ./gradlew test      # run the tests (JUnit 5)
 ./gradlew build     # compile, test and package
+docker build -t pick-your-food .   # production image (frontend included); deploy notes in README.md
 ```
 
 The tests run on H2; `PostgresMigrationTest` also runs the migrations on PostgreSQL when Docker is running.
