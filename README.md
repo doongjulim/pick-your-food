@@ -13,7 +13,7 @@ cd frontend && npm run dev     # 프론트엔드 (localhost:5173)
 
 ## 배포 (Render + Neon)
 
-1. **Neon**: [neon.tech](https://neon.tech)에서 프로젝트를 만든다(리전 AWS Asia Pacific (Singapore)). Connection details에서 host, database, user, password를 확인한다.
+1. **Neon**: [neon.tech](https://neon.tech)에서 프로젝트를 만든다(리전 AWS Asia Pacific (Singapore)). Connection details에서 host, database, user, password를 확인한다. "Connection pooling"을 끄고 `-pooler`가 붙지 않은 direct host를 사용한다.
 2. **Render**: [dashboard.render.com](https://dashboard.render.com) → New → Blueprint → 이 저장소를 연결한다. `render.yaml`대로 웹 서비스가 만들어진다.
 3. 비밀 값을 입력한다.
    - `SPRING_DATASOURCE_URL`: `jdbc:postgresql://<host>/<database>?sslmode=require`

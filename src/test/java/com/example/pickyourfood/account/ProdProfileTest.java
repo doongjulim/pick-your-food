@@ -12,7 +12,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-// on Render, HTTPS ends at its proxy and the app sees plain http with X-Forwarded-* headers
+// on Render, HTTPS ends at its proxy and the app sees plain http with X-Forwarded-Proto
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("prod")
@@ -24,9 +24,8 @@ class ProdProfileTest {
 	@Test
 	void kakaoRedirectUriUsesTheAddressThePublicSees() throws Exception {
 		mvc.perform(get("/oauth2/authorization/kakao")
-						.header("X-Forwarded-Proto", "https")
-						.header("X-Forwarded-Host", "pick.example")
-						.header("X-Forwarded-Port", "443"))
+						.with(r -> { r.setServerName("pick.example"); r.setServerPort(80); return r; })
+						.header("X-Forwarded-Proto", "https"))
 				.andExpect(header().string("Location",
 						containsString("redirect_uri=https://pick.example/login/oauth2/code/kakao")));
 	}

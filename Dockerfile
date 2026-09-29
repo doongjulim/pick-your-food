@@ -21,5 +21,5 @@ FROM eclipse-temurin:17-jre
 RUN useradd --system app
 USER app
 COPY --from=backend /app/build/libs/*-SNAPSHOT.jar /app.jar
-# Render's free plan has 512MB
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app.jar"]
+# Render's free plan has 512MB; leave room for non-heap memory
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=60", "-jar", "/app.jar"]
