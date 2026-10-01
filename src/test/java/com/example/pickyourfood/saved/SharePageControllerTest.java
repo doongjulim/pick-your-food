@@ -126,4 +126,12 @@ class SharePageControllerTest {
 
 		assertThat(page("broken-payload-0000000")).contains("<meta property=\"og:title\" content=\"오늘 뭐 먹지\" />");
 	}
+
+	@Test
+	void wrongShapeResultGetsTheDefaultCard() throws Exception {
+		jdbc.sql("insert into saved_result (id, account_id, title, food_name, origin_name, payload, created_at) values (?, ?, ?, ?, ?, ?, ?)")
+				.params("wrong-shape-0000000000", OWNER, "제목", "탄탄멘", null, "{}", Timestamp.from(Instant.now())).update();
+
+		assertThat(page("wrong-shape-0000000000")).contains("<meta property=\"og:title\" content=\"오늘 뭐 먹지\" />");
+	}
 }

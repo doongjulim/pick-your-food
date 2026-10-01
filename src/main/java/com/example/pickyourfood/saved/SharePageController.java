@@ -59,9 +59,10 @@ class SharePageController {
 		catch (RuntimeException e) {
 			return Card.DEFAULT;
 		}
+		if (result == null || result.best() == null || result.best().name() == null || result.title() == null) return Card.DEFAULT;
 		List<String> parts = new ArrayList<>();
 		if (result.best().description() != null && !result.best().description().isBlank()) parts.add(result.best().description());
-		if (result.places() != null) parts.add(result.places().origin().name() + " 근처 맛집과 데이트 코스");
+		if (result.places() != null && result.places().origin() != null && result.places().origin().name() != null) parts.add(result.places().origin().name() + " 근처 맛집과 데이트 코스");
 		String description = parts.isEmpty() ? DEFAULT_DESCRIPTION : String.join(" · ", parts);
 		if (description.length() > MAX_DESCRIPTION) description = description.substring(0, MAX_DESCRIPTION) + "…";
 		return new Card(result.best().name() + " · " + result.title(), description);
