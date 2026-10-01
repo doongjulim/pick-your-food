@@ -22,4 +22,6 @@ cd frontend && npm run dev     # 프론트엔드 (localhost:5173)
 4. **카카오 개발자 콘솔** → 카카오 로그인 → Redirect URI에 `https://<서비스 이름>.onrender.com/login/oauth2/code/kakao`를 추가한다.
 5. 이후 `main`에 푸시하면 자동으로 다시 배포된다. 스키마는 앱이 시작할 때 Flyway가 만든다.
 
+공유 링크를 카카오톡에 붙이면 결과가 카드로 보인다. 카카오는 한 번 읽은 카드를 캐시하므로, 바뀐 카드를 바로 보려면 [카카오 개발자 도구](https://developers.kakao.com/tool/debugger/sharing)의 공유 디버거에서 그 주소의 캐시를 지운다.
+
 무료 요금제는 15분 동안 요청이 없으면 잠들어서, 깨어나는 첫 요청이 30초~1분 걸릴 수 있다.
