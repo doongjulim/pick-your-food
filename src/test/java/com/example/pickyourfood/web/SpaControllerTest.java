@@ -18,11 +18,6 @@ class SpaControllerTest {
 	MockMvc mvc;
 
 	@Test
-	void sharedLinkOpenedDirectlyGetsTheFrontend() throws Exception {
-		mvc.perform(get("/s/Ab12Cd34Ef56Gh78Ij90Kl")).andExpect(status().isOk()).andExpect(forwardedUrl("/index.html"));
-	}
-
-	@Test
 	void savedListOpenedDirectlyGetsTheFrontend() throws Exception {
 		mvc.perform(get("/saved")).andExpect(status().isOk()).andExpect(forwardedUrl("/index.html"));
 	}

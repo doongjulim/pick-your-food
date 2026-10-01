@@ -1,7 +1,9 @@
 package com.example.pickyourfood.account;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
@@ -33,5 +35,15 @@ class ProdProfileTest {
 	@Test
 	void sessionCookieIsSecure() throws Exception {
 		mvc.perform(get("/oauth2/authorization/kakao")).andExpect(cookie().secure("SESSION", true));
+	}
+
+	@Test
+	void sharePreviewLinksUseTheAddressThePublicSees() throws Exception {
+		mvc.perform(get("/s/Ab12Cd34Ef56Gh78Ij90Kl")
+						.with(r -> { r.setServerName("pick.example"); r.setServerPort(80); return r; })
+						.header("X-Forwarded-Proto", "https"))
+				.andExpect(content().string(allOf(
+						containsString("content=\"https://pick.example/og.png\""),
+						containsString("content=\"https://pick.example/s/Ab12Cd34Ef56Gh78Ij90Kl\""))));
 	}
 }
