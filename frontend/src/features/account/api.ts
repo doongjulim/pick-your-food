@@ -18,3 +18,7 @@ export async function fetchMe(): Promise<Me | null> {
 export function logout(): Promise<void> {
   return request('/api/logout', { method: 'POST' })
 }
+
+export function deleteAccount(): Promise<void> {
+  return request('/api/me', { method: 'DELETE' })
+}

@@ -1,8 +1,9 @@
-import { BookmarksSimple, CaretDown, SignIn, SignOut } from '@phosphor-icons/react'
+import { BookmarksSimple, CaretDown, SignIn, SignOut, UserMinus } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { fetchMe, logout } from './api.ts'
 import type { Me } from './api.ts'
+import DeleteAccountDialog from './DeleteAccountDialog.tsx'
 
 type Account = { status: 'checking' } | { status: 'out' } | { status: 'in'; me: Me }
 
@@ -14,6 +15,8 @@ export default function AccountMenu({ onOpenSaved }: { onOpenSaved: () => void }
   const [open, setOpen] = useState(false)
   const [loginFailed] = useState(() => new URLSearchParams(location.search).get('login') === 'failed')
   const [logoutFailed, setLogoutFailed] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleted, setDeleted] = useState(false)
 
   useEffect(() => {
     // the server being down reads as logged out; the login link still works once it is back
@@ -94,6 +97,17 @@ export default function AccountMenu({ onOpenSaved }: { onOpenSaved: () => void }
                   <SignOut size={16} />
                   로그아웃
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    setConfirmingDelete(true)
+                  }}
+                  className="flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 active:scale-[0.98]"
+                >
+                  <UserMinus size={16} />
+                  회원 탈퇴
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -108,6 +122,21 @@ export default function AccountMenu({ onOpenSaved }: { onOpenSaved: () => void }
         <p role="alert" className="mt-2 text-sm text-accent">
           로그아웃하지 못했어요. 다시 시도해 주세요.
         </p>
+      )}
+      {deleted && account.status === 'out' && (
+        <p role="status" className="mt-2 text-sm text-zinc-600">
+          탈퇴했어요. 그동안 고마웠어요.
+        </p>
+      )}
+      {confirmingDelete && (
+        <DeleteAccountDialog
+          onClose={() => setConfirmingDelete(false)}
+          onDeleted={() => {
+            setConfirmingDelete(false)
+            setDeleted(true)
+            setAccount({ status: 'out' })
+          }}
+        />
       )}
     </div>
   )
