@@ -9,7 +9,7 @@
 cd frontend && npm run dev     # 프론트엔드 (localhost:5173)
 ```
 
-키: `KAKAO_REST_KEY`(필수, 카카오 로그인·장소 검색), `KAKAO_CLIENT_SECRET`(클라이언트 시크릿을 켰다면), `GOOGLE_PLACES_KEY`(평점·리뷰, 선택).
+키: `KAKAO_REST_KEY`(필수, 카카오 로그인·장소 검색), `KAKAO_CLIENT_SECRET`(클라이언트 시크릿을 켰다면), `KAKAO_ADMIN_KEY`(회원 탈퇴 시 카카오 연결 끊기, 없으면 건너뜀), `GOOGLE_PLACES_KEY`(평점·리뷰, 선택).
 
 ## 배포 (Render + Neon)
 
@@ -19,6 +19,7 @@ cd frontend && npm run dev     # 프론트엔드 (localhost:5173)
    - `SPRING_DATASOURCE_URL`: `jdbc:postgresql://<host>/<database>?sslmode=require`
    - `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`: Neon의 user, password
    - `KAKAO_REST_KEY`, `KAKAO_CLIENT_SECRET`, `GOOGLE_PLACES_KEY`: 로컬과 같은 값
+   - `KAKAO_ADMIN_KEY`: 카카오 개발자 콘솔 → 앱 → 앱 키 → Admin 키. 앱 전체 권한을 가진 키라 서버 환경변수에만 둔다
 4. **카카오 개발자 콘솔** → 카카오 로그인 → Redirect URI에 `https://<서비스 이름>.onrender.com/login/oauth2/code/kakao`를 추가한다.
 5. 이후 `main`에 푸시하면 자동으로 다시 배포된다. 스키마는 앱이 시작할 때 Flyway가 만든다.
 

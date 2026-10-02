@@ -1,5 +1,6 @@
 package com.example.pickyourfood.place;
 
+import com.example.pickyourfood.food.HttpTimeouts;
 import com.example.pickyourfood.place.PlacesResponse.Review;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
