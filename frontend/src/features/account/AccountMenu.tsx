@@ -136,6 +136,10 @@ export default function AccountMenu({ onOpenSaved }: { onOpenSaved: () => void }
             setDeleted(true)
             setAccount({ status: 'out' })
           }}
+          onLoggedOut={() => {
+            setConfirmingDelete(false)
+            setAccount({ status: 'out' })
+          }}
         />
       )}
     </div>

@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
+import { HttpError } from '../../shared/api.ts'
 import { deleteAccount } from './api.ts'
 
 // the browser's modal dialog traps focus and closes on Esc; Esc is ignored while the deletion runs
-export default function DeleteAccountDialog({ onClose, onDeleted }: { onClose: () => void; onDeleted: () => void }) {
+// a 401 means the session is already gone (deleted on another device or expired), so it reads as logged out
+export default function DeleteAccountDialog({
+  onClose,
+  onDeleted,
+  onLoggedOut,
+}: {
+  onClose: () => void
+  onDeleted: () => void
+  onLoggedOut: () => void
+}) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [deleting, setDeleting] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -14,7 +24,8 @@ export default function DeleteAccountDialog({ onClose, onDeleted }: { onClose: (
   function confirm() {
     setDeleting(true)
     setFailed(false)
-    deleteAccount().then(onDeleted, () => {
+    deleteAccount().then(onDeleted, (error) => {
+      if (error instanceof HttpError && error.status === 401) return onLoggedOut()
       setDeleting(false)
       setFailed(true)
     })
@@ -28,6 +39,8 @@ export default function DeleteAccountDialog({ onClose, onDeleted }: { onClose: (
         event.preventDefault()
         if (!deleting) onClose()
       }}
+      // a second Esc can't be cancelled, so the browser closes the dialog anyway; reopen it until the deletion ends
+      onClose={() => (deleting ? dialog.current?.showModal() : onClose())}
       className="m-auto w-[min(26rem,calc(100%-2rem))] rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 backdrop:bg-zinc-950/40"
     >
       <h2 id="delete-account-title" className="text-xl font-semibold tracking-tight">
