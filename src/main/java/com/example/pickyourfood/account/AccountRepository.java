@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 class AccountRepository {
@@ -33,5 +34,16 @@ class AccountRepository {
 
 	void rename(long id, String nickname) {
 		jdbc.sql("update account set nickname = ? where id = ?").params(nickname, id).update();
+	}
+
+	Optional<String> kakaoId(long id) {
+		return jdbc.sql("select kakao_id from account where id = ?").param(id).query(String.class).optional();
+	}
+
+	// saved results first: they reference the account
+	@Transactional
+	void delete(long id) {
+		jdbc.sql("delete from saved_result where account_id = ?").param(id).update();
+		jdbc.sql("delete from account where id = ?").param(id).update();
 	}
 }

@@ -25,6 +25,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -55,6 +56,9 @@ class PostgresMigrationTest {
 
 	@Autowired
 	JsonMapper json;
+
+	@MockitoBean
+	KakaoUnlink unlink;
 
 	private static <S extends Session> String store(SessionRepository<S> repository, SecurityContextImpl context) {
 		S session = repository.createSession();
@@ -97,5 +101,16 @@ class PostgresMigrationTest {
 		mvc.perform(delete("/api/saved/" + id).cookie(session, xsrf).header("X-XSRF-TOKEN", xsrf.getValue()))
 				.andExpect(status().isNoContent());
 		mvc.perform(get("/api/saved/" + id)).andExpect(status().isNotFound());
+
+		// account deletion removes saved results before the account they reference
+		mvc.perform(post("/api/saved").cookie(session, xsrf).header("X-XSRF-TOKEN", xsrf.getValue())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"title":"오늘의 랜덤 메뉴","best":{"id":"tantanmen","name":"탄탄멘","description":"고소하고 매콤한 국물"},"alternatives":[]}"""))
+				.andExpect(status().isCreated());
+		mvc.perform(delete("/api/me").cookie(session, xsrf).header("X-XSRF-TOKEN", xsrf.getValue()))
+				.andExpect(status().isNoContent());
+		assertThat(jdbc.sql("select count(*) from account where id = ?").param(account.id()).query(Long.class).single()).isZero();
+		mvc.perform(get("/api/me").cookie(session)).andExpect(status().isUnauthorized());
 	}
 }
