@@ -9,7 +9,7 @@
 cd frontend && npm run dev     # 프론트엔드 (localhost:5173)
 ```
 
-키: `KAKAO_REST_KEY`(필수, 카카오 로그인·장소 검색), `KAKAO_CLIENT_SECRET`(클라이언트 시크릿을 켰다면), `KAKAO_ADMIN_KEY`(회원 탈퇴 시 카카오 연결 끊기, 없으면 건너뜀), `GOOGLE_PLACES_KEY`(평점·리뷰, 선택).
+키: `KAKAO_REST_KEY`(필수, 카카오 로그인·장소 검색), `KAKAO_CLIENT_SECRET`(클라이언트 시크릿을 켰다면), `KAKAO_ADMIN_KEY`(회원 탈퇴 시 카카오 연결 끊기, 없으면 건너뜀), `GOOGLE_PLACES_KEY`(평점·리뷰, 선택), `TMAP_APP_KEY`(데이트 코스의 실제 도보 경로, 없으면 직선거리), `KAKAO_JS_KEY`(코스 지도, 없으면 지도를 숨김).
 
 ## 배포 (Render + Neon)
 
@@ -20,8 +20,11 @@ cd frontend && npm run dev     # 프론트엔드 (localhost:5173)
    - `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`: Neon의 user, password
    - `KAKAO_REST_KEY`, `KAKAO_CLIENT_SECRET`, `GOOGLE_PLACES_KEY`: 로컬과 같은 값
    - `KAKAO_ADMIN_KEY`: 카카오 개발자 콘솔 → 앱 → 앱 키 → Admin 키. 앱 전체 권한을 가진 키라 서버 환경변수에만 둔다
+   - `TMAP_APP_KEY`: [SK open API](https://openapi.sk.com)에서 앱을 만들고 TMAP API를 사용 신청한 뒤 받은 appKey
+   - `KAKAO_JS_KEY`: 카카오 개발자 콘솔 → 앱 → 앱 키 → JavaScript 키. 브라우저에 그대로 노출되는 키라 등록한 도메인에서만 동작한다
 4. **카카오 개발자 콘솔** → 카카오 로그인 → Redirect URI에 `https://<서비스 이름>.onrender.com/login/oauth2/code/kakao`를 추가한다.
-5. 이후 `main`에 푸시하면 자동으로 다시 배포된다. 스키마는 앱이 시작할 때 Flyway가 만든다.
+5. 카카오 개발자 콘솔 → 플랫폼 → Web 사이트 도메인에 `http://localhost:5173`, `http://localhost:8080`, `https://<서비스 이름>.onrender.com`을 등록하고, 앱 설정에서 카카오맵 사용을 켠다.
+6. 이후 `main`에 푸시하면 자동으로 다시 배포된다. 스키마는 앱이 시작할 때 Flyway가 만든다.
 
 공유 링크를 카카오톡에 붙이면 결과가 카드로 보인다. 카카오는 한 번 읽은 카드를 캐시하므로, 바뀐 카드를 바로 보려면 [카카오 개발자 도구](https://developers.kakao.com/tool/debugger/sharing)의 공유 디버거에서 그 주소의 캐시를 지운다.
 
