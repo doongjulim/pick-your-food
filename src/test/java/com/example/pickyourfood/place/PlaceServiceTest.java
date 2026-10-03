@@ -19,8 +19,10 @@ import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
+import com.example.pickyourfood.place.TmapClient.Route;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.RestClientException;
@@ -32,7 +34,9 @@ class PlaceServiceTest {
 
 	private final KakaoClient kakao = mock(KakaoClient.class);
 	private final GooglePlacesClient google = mock(GooglePlacesClient.class);
-	private final PlaceService service = new PlaceService(kakao, google);
+	// a mock answers Optional.empty(), so tests that don't stub it get straight-line legs
+	private final TmapClient tmap = mock(TmapClient.class);
+	private final PlaceService service = new PlaceService(kakao, google, tmap);
 
 	private static KakaoPlace place(String id, double lat) {
 		return new KakaoPlace(id, id, "중국요리", "주소 " + id, lat, 127.05, 100, "https://place.map.kakao.com/" + id);
@@ -207,7 +211,7 @@ class PlaceServiceTest {
 
 		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
 
-		assertThat(course.legs()).containsExactly(new Leg("r1", "cafe", 445, 7), new Leg("cafe", "sight", 556, 9));
+		assertThat(course.legs()).containsExactly(new Leg("r1", "cafe", 445, 7, null), new Leg("cafe", "sight", 556, 9, null));
 	}
 
 	@Test
@@ -218,7 +222,7 @@ class PlaceServiceTest {
 		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
 
 		assertThat(course.cafe()).isNull();
-		assertThat(course.legs()).containsExactly(new Leg("r1", "sight", 0, 1));
+		assertThat(course.legs()).containsExactly(new Leg("r1", "sight", 0, 1, null));
 		assertThat(course.routeUrl()).isNotNull();
 	}
 
@@ -272,5 +276,60 @@ class PlaceServiceTest {
 	void unknownPlaceIsNotFound() {
 		assertThatThrownBy(() -> service.locate("없는동네")).isInstanceOfSatisfying(ResponseStatusException.class,
 				e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
+	}
+
+	private static final List<double[]> WALK = List.of(
+			new double[] { 37.56, 127.05 }, new double[] { 37.562, 127.051 }, new double[] { 37.564, 127.05 });
+
+	@Test
+	void legsFollowTheWalkingRouteWhenTmapHasOne() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		when(tmap.route(37.56, 127.05, 37.564, 127.05)).thenReturn(Optional.of(new Route(512, 421, WALK)));
+
+		Leg leg = service.search("ramen", ORIGIN).dateCourses().get(0).legs().get(0);
+
+		assertThat(leg.meters()).isEqualTo(512);
+		assertThat(leg.walkMinutes()).isEqualTo(8); // 421s rounds up
+		assertThat(leg.path()).containsExactlyElementsOf(WALK);
+	}
+
+	@Test
+	void failedRouteFallsBackToTheStraightLineAndIsNotCached() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564)); // 445m from the restaurant
+		when(tmap.route(anyDouble(), anyDouble(), anyDouble(), anyDouble())).thenThrow(new RestClientException("TMAP down"));
+
+		service.search("ramen", ORIGIN);
+		DateCourse course = service.search("ramen", ORIGIN).dateCourses().get(0);
+
+		assertThat(course.legs()).containsExactly(new Leg("r1", "cafe", 445, 7, null));
+		verify(tmap, times(2)).route(anyDouble(), anyDouble(), anyDouble(), anyDouble());
+	}
+
+	@Test
+	void routesAreCachedPerPairOfStops() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		when(tmap.route(37.56, 127.05, 37.564, 127.05)).thenReturn(Optional.of(new Route(512, 421, WALK)));
+
+		service.search("ramen", ORIGIN);
+		Leg leg = service.search("ramen", ORIGIN).dateCourses().get(0).legs().get(0);
+
+		assertThat(leg.meters()).isEqualTo(512);
+		verify(tmap, times(1)).route(anyDouble(), anyDouble(), anyDouble(), anyDouble());
+	}
+
+	@Test
+	void pathsAreRoundedAndLongOnesThinnedKeepingBothEnds() {
+		assertThat(PlaceService.thin(List.of(new double[] { 37.123456789, 127.987654321 })))
+				.containsExactly(new double[] { 37.12346, 127.98765 });
+
+		List<double[]> longPath = IntStream.range(0, 1000).mapToObj(i -> new double[] { 37.5 + i * 0.000001234, 127.0 }).toList();
+		List<double[]> thinned = PlaceService.thin(longPath);
+
+		assertThat(thinned).hasSize(PlaceService.MAX_PATH_POINTS);
+		assertThat(thinned.get(0)).containsExactly(37.5, 127.0);
+		assertThat(thinned.get(thinned.size() - 1)).containsExactly(37.50123, 127.0); // the 1000th point, rounded
 	}
 }

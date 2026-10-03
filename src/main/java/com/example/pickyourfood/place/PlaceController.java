@@ -1,6 +1,7 @@
 package com.example.pickyourfood.place;
 
 import com.example.pickyourfood.place.PlacesResponse.Origin;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,9 +12,11 @@ import org.springframework.web.server.ResponseStatusException;
 class PlaceController {
 
 	private final PlaceService places;
+	private final String mapKey;
 
-	PlaceController(PlaceService places) {
+	PlaceController(PlaceService places, @Value("${kakao.js-key:}") String mapKey) {
 		this.places = places;
+		this.mapKey = mapKey;
 	}
 
 	@GetMapping("/api/places")
@@ -28,5 +31,14 @@ class PlaceController {
 		else if (lat != null && lng != null) origin = new Origin("현재 위치", lat, lng);
 		else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lat and lng, or near, is required");
 		return places.search(food.strip(), origin);
+	}
+
+	// the Kakao Maps JavaScript key is public by design (Kakao only honours it on our domains); null hides the map
+	@GetMapping("/api/places/map-key")
+	MapKey mapKey() {
+		return new MapKey(mapKey.isBlank() ? null : mapKey);
+	}
+
+	record MapKey(String key) {
 	}
 }

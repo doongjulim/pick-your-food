@@ -16,7 +16,7 @@ class SecurityConfig {
 	SecurityFilterChain security(HttpSecurity http, AccountService accounts) throws Exception {
 		http
 				.authorizeHttpRequests(requests -> requests
-						.requestMatchers("/api/foods/**", "/api/recommendations", "/api/places").permitAll()
+						.requestMatchers("/api/foods/**", "/api/recommendations", "/api/places", "/api/places/map-key").permitAll()
 						// a saved result's link is public; saving, listing and deleting need a login
 						.requestMatchers(HttpMethod.GET, "/api/saved/*").permitAll()
 						.requestMatchers("/api/**").authenticated()

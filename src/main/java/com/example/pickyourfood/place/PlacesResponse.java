@@ -29,8 +29,9 @@ public record PlacesResponse(Origin origin, List<Place> nearby, List<Place> famo
 	public record Spot(String id, String name, String category, String address, double lat, double lng, String kakaoUrl) {
 	}
 
-	// straight-line distance between two stops; walkMinutes rounds up and is at least 1
-	public record Leg(String from, String to, int meters, int walkMinutes) {
+	// walking distance and time between two stops: TMAP's route, with path its [lat, lng] points, or when that is
+	// unavailable the straight line, with path null; walkMinutes rounds up to at least 1
+	public record Leg(String from, String to, int meters, int walkMinutes, List<double[]> path) {
 	}
 
 	// cafe and sight are null when nothing is found near the restaurant; legs join only the stops that exist,

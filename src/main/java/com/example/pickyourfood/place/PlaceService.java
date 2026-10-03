@@ -7,6 +7,7 @@ import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
 import com.example.pickyourfood.place.PlacesResponse.Spot;
+import com.example.pickyourfood.place.TmapClient.Route;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -46,6 +47,8 @@ public class PlaceService {
 	static final int WALK_METERS_PER_MINUTE = 67;
 	static final String ROUTE_BASE = "https://map.kakao.com/link/by/walk/";
 	static final Duration CACHE_TTL = Duration.ofHours(24);
+	// per leg, so three saved courses stay far under the saved result's size limit
+	static final int MAX_PATH_POINTS = 200;
 
 	// most reviews first, then best rating; places Google does not know go last
 	static final Comparator<Place> FAMOUS_ORDER = Comparator
@@ -56,17 +59,21 @@ public class PlaceService {
 
 	private final KakaoClient kakao;
 	private final GooglePlacesClient google;
+	private final TmapClient tmap;
 	// ponytail: unbounded map, entries only expire when read again; swap for Caffeine if memory grows
 	private final Map<String, Cached> cache = new ConcurrentHashMap<>();
+	// successful routes only, so a TMAP outage is retried on the next search
+	private final Map<String, CachedRoute> routes = new ConcurrentHashMap<>();
 	private final ExecutorService pool = Executors.newFixedThreadPool(10, task -> {
 		Thread thread = new Thread(task, "place-lookups");
 		thread.setDaemon(true);
 		return thread;
 	});
 
-	PlaceService(KakaoClient kakao, GooglePlacesClient google) {
+	PlaceService(KakaoClient kakao, GooglePlacesClient google, TmapClient tmap) {
 		this.kakao = kakao;
 		this.google = google;
+		this.tmap = tmap;
 	}
 
 	public Origin locate(String near) {
@@ -129,13 +136,13 @@ public class PlaceService {
 				.map(restaurant -> candidatesAsync(KakaoClient.SIGHT, restaurant, SIGHT_RADIUS)).toList();
 		// picked in course order, so an earlier course keeps its nearest spot
 		Set<String> used = new HashSet<>();
-		List<DateCourse> courses = new ArrayList<>();
+		List<CompletableFuture<DateCourse>> courses = new ArrayList<>();
 		for (int i = 0; i < restaurants.size(); i++) {
 			Spot cafe = pick(cafes.get(i).join(), used);
 			Spot sight = pick(sights.get(i).join(), used);
-			courses.add(course(restaurants.get(i), cafe, sight));
+			courses.add(courseAsync(restaurants.get(i), cafe, sight));
 		}
-		return courses;
+		return courses.stream().map(CompletableFuture::join).toList();
 	}
 
 	private CompletableFuture<List<KakaoPlace>> candidatesAsync(String category, Place from, int radius) {
@@ -161,23 +168,58 @@ public class PlaceService {
 				.orElse(null);
 	}
 
-	private static DateCourse course(Place restaurant, Spot cafe, Spot sight) {
+	private CompletableFuture<DateCourse> courseAsync(Place restaurant, Spot cafe, Spot sight) {
 		List<Stop> stops = new ArrayList<>();
-		stops.add(new Stop(restaurant.name(), restaurant.lat(), restaurant.lng()));
-		if (cafe != null) stops.add(new Stop(cafe.name(), cafe.lat(), cafe.lng()));
-		if (sight != null) stops.add(new Stop(sight.name(), sight.lat(), sight.lng()));
-		List<Leg> legs = IntStream.range(1, stops.size()).mapToObj(i -> leg(stops.get(i - 1), stops.get(i))).toList();
+		stops.add(new Stop(restaurant.id(), restaurant.name(), restaurant.lat(), restaurant.lng()));
+		if (cafe != null) stops.add(new Stop(cafe.id(), cafe.name(), cafe.lat(), cafe.lng()));
+		if (sight != null) stops.add(new Stop(sight.id(), sight.name(), sight.lat(), sight.lng()));
+		List<CompletableFuture<Leg>> legs = IntStream.range(1, stops.size())
+				.mapToObj(i -> legAsync(stops.get(i - 1), stops.get(i))).toList();
 		String routeUrl = legs.isEmpty() ? null
 				: ROUTE_BASE + stops.stream()
 						.map(stop -> routeName(stop.name()) + "," + stop.lat() + "," + stop.lng())
 						.collect(Collectors.joining("/"));
-		return new DateCourse(restaurant, cafe, sight, legs, routeUrl);
+		return CompletableFuture.allOf(legs.toArray(CompletableFuture[]::new))
+				.thenApply(done -> new DateCourse(restaurant, cafe, sight, legs.stream().map(CompletableFuture::join).toList(), routeUrl));
 	}
 
-	private static Leg leg(Stop from, Stop to) {
-		int meters = meters(from.lat(), from.lng(), to.lat(), to.lng());
-		int minutes = Math.max(1, (int) Math.ceil(meters / (double) WALK_METERS_PER_MINUTE));
-		return new Leg(from.name(), to.name(), meters, minutes);
+	private CompletableFuture<Leg> legAsync(Stop from, Stop to) {
+		return CompletableFuture.supplyAsync(() -> route(from, to)
+				.map(found -> new Leg(from.name(), to.name(), found.meters(), Math.max(1, (int) Math.ceil(found.seconds() / 60.0)), found.path()))
+				.orElseGet(() -> {
+					int meters = meters(from.lat(), from.lng(), to.lat(), to.lng());
+					int minutes = Math.max(1, (int) Math.ceil(meters / (double) WALK_METERS_PER_MINUTE));
+					return new Leg(from.name(), to.name(), meters, minutes, null);
+				}), pool);
+	}
+
+	// TMAP's walking route, thinned; empty without a key or when TMAP fails, and the leg falls back to the straight line
+	private Optional<Route> route(Stop from, Stop to) {
+		String key = from.id() + ">" + to.id();
+		CachedRoute cached = routes.get(key);
+		if (cached != null && cached.at().plus(CACHE_TTL).isAfter(Instant.now())) return Optional.of(cached.route());
+		try {
+			Optional<Route> route = tmap.route(from.lat(), from.lng(), to.lat(), to.lng())
+					.map(found -> new Route(found.meters(), found.seconds(), thin(found.path())));
+			route.ifPresent(found -> routes.put(key, new CachedRoute(found, Instant.now())));
+			return route;
+		} catch (RuntimeException e) {
+			log.warn("TMAP route failed from {} to {}: {}", from.name(), to.name(), e.getMessage());
+			return Optional.empty();
+		}
+	}
+
+	// 5 decimals is about 1m; a longer path keeps both ends and evenly spaced points between
+	static List<double[]> thin(List<double[]> path) {
+		int size = Math.min(path.size(), MAX_PATH_POINTS);
+		return IntStream.range(0, size)
+				.mapToObj(i -> path.get(size == path.size() ? i : (int) Math.round(i * (path.size() - 1) / (double) (size - 1))))
+				.map(point -> new double[] { round5(point[0]), round5(point[1]) })
+				.toList();
+	}
+
+	private static double round5(double value) {
+		return Math.round(value * 100_000) / 100_000.0;
 	}
 
 	// ',' and '/' separate the link's parts, so names lose them before encoding
@@ -194,9 +236,13 @@ public class PlaceService {
 		return (int) Math.round(2 * 6_371_000 * Math.asin(Math.sqrt(a)));
 	}
 
-	private record Stop(String name, double lat, double lng) {
+	// id keys the route cache
+	private record Stop(String id, String name, double lat, double lng) {
 	}
 
 	private record Cached(Optional<GoogleInfo> info, Instant at) {
+	}
+
+	private record CachedRoute(Route route, Instant at) {
 	}
 }

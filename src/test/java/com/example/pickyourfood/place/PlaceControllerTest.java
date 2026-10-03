@@ -1,5 +1,7 @@
 package com.example.pickyourfood.place;
 
+import static org.hamcrest.Matchers.nullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -8,7 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.pickyourfood.place.PlacesResponse.DateCourse;
+import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
+import com.example.pickyourfood.place.PlacesResponse.Place;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-@SpringBootTest
+@SpringBootTest(properties = "kakao.js-key=test-js-key")
 @AutoConfigureMockMvc
 class PlaceControllerTest {
 
@@ -82,5 +87,33 @@ class PlaceControllerTest {
 
 		mvc.perform(get("/api/places").param("food", "탄탄멘").param("lat", "37.54").param("lng", "127.05"))
 				.andExpect(status().isBadGateway());
+	}
+
+	@Test
+	void legPathIsSentAsLatLngPairs() throws Exception {
+		Origin here = new Origin("현재 위치", 37.54, 127.05);
+		Place restaurant = new Place("r1", "r1", "", 0, 37.56, 127.05, "", null, null, null, List.of(), null);
+		Leg leg = new Leg("r1", "cafe", 512, 8, List.of(new double[] { 37.56, 127.05 }, new double[] { 37.564, 127.051 }));
+		Leg straight = new Leg("cafe", "sight", 300, 5, null);
+		DateCourse course = new DateCourse(restaurant, null, null, List.of(leg, straight), "https://map.kakao.com/link/by/walk/a");
+		when(places.search("탄탄멘", here)).thenReturn(new PlacesResponse(here, List.of(), List.of(), List.of(course)));
+
+		mvc.perform(get("/api/places").param("food", "탄탄멘").param("lat", "37.54").param("lng", "127.05"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.dateCourses[0].legs[0].path[1][0]").value(37.564))
+				.andExpect(jsonPath("$.dateCourses[0].legs[0].path[1][1]").value(127.051))
+				.andExpect(jsonPath("$.dateCourses[0].legs[1].path").value(nullValue()));
+	}
+
+	@Test
+	void mapKeyNeedsNoLogin() throws Exception {
+		mvc.perform(get("/api/places/map-key"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.key").value("test-js-key"));
+	}
+
+	@Test
+	void mapKeyIsNullWithoutAKey() {
+		assertThat(new PlaceController(places, "").mapKey().key()).isNull();
 	}
 }
