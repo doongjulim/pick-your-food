@@ -20,7 +20,8 @@ record SavedResult(String title, Food best, List<Food> alternatives, Places plac
 	record Spot(String id, String name, String category, String address, double lat, double lng, String kakaoUrl) {
 	}
 
-	record Leg(String from, String to, int meters, int walkMinutes) {
+	// path is the walking route as [lat, lng] points; null for straight-line legs and results saved before routes
+	record Leg(String from, String to, int meters, int walkMinutes, List<double[]> path) {
 	}
 
 	record DateCourse(Place restaurant, Spot cafe, Spot sight, List<Leg> legs, String routeUrl) {

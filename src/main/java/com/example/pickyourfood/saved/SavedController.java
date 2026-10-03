@@ -75,7 +75,14 @@ class SavedController {
 	private static boolean valid(SavedResult.Places p) {
 		return p.origin() != null && p.origin().name() != null && p.origin().name().length() <= 200
 				&& fits(p.nearby(), 10) && fits(p.famous(), 10) && fits(p.dateCourses(), 3)
-				&& p.dateCourses().stream().allMatch(c -> c.restaurant() != null && fits(c.legs(), 2));
+				&& p.dateCourses().stream().allMatch(c -> c.restaurant() != null && fits(c.legs(), 2)
+						&& c.legs().stream().allMatch(leg -> leg.path() == null || validPath(leg.path())));
+	}
+
+	// 200 matches the points the server thins a route to; each point is [lat, lng]
+	private static boolean validPath(List<double[]> path) {
+		return fits(path, 200) && path.stream()
+				.allMatch(point -> point.length == 2 && Math.abs(point[0]) <= 90 && Math.abs(point[1]) <= 180);
 	}
 
 	private static boolean fits(List<?> list, int max) {

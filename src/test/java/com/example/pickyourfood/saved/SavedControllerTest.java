@@ -146,6 +146,7 @@ class SavedControllerTest {
 				.andExpect(jsonPath("$.result.places.dateCourses[0].restaurant.reviewCount").doesNotExist())
 				.andExpect(jsonPath("$.result.places.dateCourses[0].cafe.name").value("어니언"))
 				.andExpect(jsonPath("$.result.places.dateCourses[0].legs[0].walkMinutes").value(5))
+				.andExpect(jsonPath("$.result.places.dateCourses[0].legs[0].path").isEmpty())
 				.andExpect(jsonPath("$.result.secret").doesNotExist());
 		assertThat(jdbc.sql("select payload from saved_result where id = ?").param(id).query(String.class).single())
 				.doesNotContain("국물이 진해요", "maps.google.com", "unknown fields");
@@ -184,6 +185,30 @@ class SavedControllerTest {
 
 	private static String repeat(String item, int times) {
 		return String.join(",", java.util.Collections.nCopies(times, item));
+	}
+
+	@Test
+	void walkingPathsAreKeptAndCheckedOnSave() throws Exception {
+		String leg = "{\"from\":\"a\",\"to\":\"b\",\"meters\":1,\"walkMinutes\":1,\"path\":[%s]}";
+		String id = save(SEOYUN, withLegs(leg.formatted("[37.54,127.05],[37.541,127.051]")));
+
+		mvc.perform(get("/api/saved/" + id))
+				.andExpect(jsonPath("$.result.places.dateCourses[0].legs[0].path[1][0]").value(37.541))
+				.andExpect(jsonPath("$.result.places.dateCourses[0].legs[0].path[1][1]").value(127.051));
+
+		save(SEOYUN, withLegs(leg.formatted(repeat("[37.54,127.05]", 200))));
+		rejects(withLegs(leg.formatted(repeat("[37.54,127.05]", 201))));
+		rejects(withLegs(leg.formatted("[91,127.05]")));
+		rejects(withLegs(leg.formatted("[-91,127.05]")));
+		rejects(withLegs(leg.formatted("[37.54,181]")));
+		rejects(withLegs(leg.formatted("[37.54,127.05,0]")));
+		rejects(withLegs(leg.formatted("[37.54]")));
+		rejects(withLegs(leg.formatted("[37.54,127.05],null")));
+	}
+
+	private static String withLegs(String legs) {
+		String place = "{\"id\":\"p\",\"name\":\"식당\",\"address\":\"\",\"distanceMeters\":1,\"lat\":0,\"lng\":0,\"kakaoUrl\":\"\"}";
+		return withPlaces("", "", "{\"restaurant\":" + place + ",\"cafe\":null,\"sight\":null,\"legs\":[" + legs + "],\"routeUrl\":null}");
 	}
 
 	@Test
