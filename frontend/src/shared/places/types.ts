@@ -31,12 +31,14 @@ export type Spot = {
   kakaoUrl: string
 }
 
-// straight-line distance between two stops
+// walking distance between two stops; path is the walking route as [lat, lng] points,
+// null (or missing in older saved results) when only the straight line is known
 export type Leg = {
   from: string
   to: string
   meters: number
   walkMinutes: number
+  path: [number, number][] | null
 }
 
 // legs join only the stops that exist; routeUrl is null when the restaurant is the only stop

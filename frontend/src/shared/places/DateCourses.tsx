@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { DateCourse, Leg } from './types.ts'
 import { distance } from './format.ts'
 import MapLink from './MapLink.tsx'
+import CourseMap from './CourseMap.tsx'
 
 // leg is the walk into this step, shown above it
 type Step = { icon: Icon; label: string; leg: string | null } & (
@@ -34,6 +35,8 @@ export default function DateCourses({ courses }: { courses: DateCourse[] }) {
         { icon: Mountains, label: '볼거리', leg: walk(legs[legs.length - 1], !cafe), name: sight.name, detail: sight.category, url: sight.kakaoUrl }
       : { icon: Mountains, label: '볼거리', leg: null, missing: '근처에 볼거리를 찾지 못했어요' },
   ]
+  const straight = legs.filter((leg) => !leg.path).length
+  const note = straight === 0 ? null : straight === legs.length ? '직선거리 기준 예상 시간이에요' : '일부 구간은 직선거리 기준이에요'
 
   return (
     <div>
@@ -59,63 +62,64 @@ export default function DateCourses({ courses }: { courses: DateCourse[] }) {
         </div>
       )}
       <AnimatePresence mode="wait">
-        <motion.div
+        <motion.ol
           key={selected}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={spring}
+          className="mt-8 grid gap-8 md:grid-cols-3 md:gap-6"
         >
-          <ol className="mt-8 grid gap-8 md:grid-cols-3 md:gap-6">
-            {steps.map((step, index) => (
-              <motion.li
-                key={step.label}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ ...spring, delay: index * 0.15 }}
-                className="border-l border-zinc-300 pl-6 md:border-l-0 md:border-t md:pl-0 md:pt-6"
-              >
-                {/* keeps the steps level on desktop even when a step has no leg */}
-                <p className={`mb-3 flex h-4 items-center gap-1.5 font-mono text-xs text-zinc-500 ${step.leg ? '' : 'max-md:hidden'}`}>
-                  {step.leg && (
-                    <>
-                      <PersonSimpleWalk size={14} /> {step.leg}
-                    </>
-                  )}
-                </p>
-                <p className="flex items-center gap-2 text-sm text-zinc-500">
-                  <span className="font-mono text-accent">{number(index)}</span>
-                  <step.icon size={16} /> {step.label}
-                </p>
-                {'missing' in step ? (
-                  <p className="mt-3 text-base text-zinc-400">{step.missing}</p>
-                ) : (
+          {steps.map((step, index) => (
+            <motion.li
+              key={step.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...spring, delay: index * 0.15 }}
+              className="border-l border-zinc-300 pl-6 md:border-l-0 md:border-t md:pl-0 md:pt-6"
+            >
+              {/* keeps the steps level on desktop even when a step has no leg */}
+              <p className={`mb-3 flex h-4 items-center gap-1.5 font-mono text-xs text-zinc-500 ${step.leg ? '' : 'max-md:hidden'}`}>
+                {step.leg && (
                   <>
-                    <p className="mt-3 text-xl font-semibold tracking-tight">{step.name}</p>
-                    <p className="mt-1 text-sm text-zinc-500">{step.detail}</p>
-                    <div className="mt-4">
-                      <MapLink href={step.url} label="카카오맵" />
-                    </div>
+                    <PersonSimpleWalk size={14} /> {step.leg}
                   </>
                 )}
-              </motion.li>
-            ))}
-          </ol>
-          {routeUrl && (
-            <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <a
-                href={routeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-fit items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition active:scale-[0.98]"
-              >
-                <MapTrifold size={16} /> 전체 경로 보기
-              </a>
-              <p className="text-sm text-zinc-500">직선거리 기준 예상 시간이에요</p>
-            </div>
-          )}
-        </motion.div>
+              </p>
+              <p className="flex items-center gap-2 text-sm text-zinc-500">
+                <span className="font-mono text-accent">{number(index)}</span>
+                <step.icon size={16} /> {step.label}
+              </p>
+              {'missing' in step ? (
+                <p className="mt-3 text-base text-zinc-400">{step.missing}</p>
+              ) : (
+                <>
+                  <p className="mt-3 text-xl font-semibold tracking-tight">{step.name}</p>
+                  <p className="mt-1 text-sm text-zinc-500">{step.detail}</p>
+                  <div className="mt-4">
+                    <MapLink href={step.url} label="카카오맵" />
+                  </div>
+                </>
+              )}
+            </motion.li>
+          ))}
+        </motion.ol>
       </AnimatePresence>
+      {/* a restaurant-only course has nothing to draw */}
+      {legs.length > 0 && <CourseMap course={courses[selected]} />}
+      {routeUrl && (
+        <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <a
+            href={routeUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-fit items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition active:scale-[0.98]"
+          >
+            <MapTrifold size={16} /> 전체 경로 보기
+          </a>
+          {note && <p className="text-sm text-zinc-500">{note}</p>}
+        </div>
+      )}
     </div>
   )
 }
