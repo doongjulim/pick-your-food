@@ -66,11 +66,14 @@ export default function PlacesSection({ food, onLoaded }: Props) {
   }
 
   // one picked course at a time: a new one replaces the last, and a restaurant that already has a course just shows it
+  // (and, since that counts as the latest click, it also drops any still-pending fetch from an earlier click)
   function pick(place: Place) {
     if (state.status !== 'done') return
     const data = state.data
     const existing = data.dateCourses.findIndex((course) => course.restaurant.id === place.id)
     if (existing >= 0) {
+      latestCourse.current++
+      setPicking({ pending: null, failed: null })
       show(existing)
       return
     }
