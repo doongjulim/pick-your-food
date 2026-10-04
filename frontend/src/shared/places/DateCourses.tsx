@@ -21,10 +21,10 @@ function walk(leg: Leg, fromRestaurant: boolean): string {
   return `${fromRestaurant ? '식당에서 ' : ''}도보 ${leg.walkMinutes}분 · ${distance(leg.meters)}`
 }
 
-// starts on the first course; PlacesSection remounts this for every new search
-export default function DateCourses({ courses }: { courses: DateCourse[] }) {
-  const [selected, setSelected] = useState(0)
-  const { restaurant, cafe, sight, legs, routeUrl } = courses[selected]
+// starts on the initial course (the first by default); PlacesSection remounts this for every new search and picked course
+export default function DateCourses({ courses, initial = 0 }: { courses: DateCourse[]; initial?: number }) {
+  const [selected, setSelected] = useState(initial)
+  const { restaurant, cafe, sight, legs, routeUrl, picked } = courses[selected]
   const steps: Step[] = [
     { icon: ForkKnife, label: '식사', leg: null, name: restaurant.name, detail: restaurant.address, url: restaurant.kakaoUrl },
     cafe
@@ -40,7 +40,7 @@ export default function DateCourses({ courses }: { courses: DateCourse[] }) {
 
   return (
     <div>
-      <p className="text-sm font-medium text-accent">데이트 코스</p>
+      <p className="text-sm font-medium text-accent">{picked ? '내 데이트 코스' : '데이트 코스'}</p>
       <h3 className="mt-2 text-2xl font-semibold tracking-tight">{restaurant.name}에서 시작해요</h3>
       {courses.length > 1 && (
         <div className="mt-6 flex flex-wrap gap-2">
@@ -55,7 +55,9 @@ export default function DateCourses({ courses }: { courses: DateCourse[] }) {
                 <motion.span layoutId="course-tab" className="absolute inset-0 rounded-full bg-zinc-900" transition={spring} />
               )}
               <span className={`relative block truncate ${index === selected ? 'text-white' : 'text-zinc-600'}`}>
-                <span className="font-mono">{number(index)}</span> {course.restaurant.name}
+                <span className="font-mono">{number(index)}</span>{' '}
+                {course.picked && <span className={index === selected ? 'text-accent-soft' : 'text-accent'}>내 코스 </span>}
+                {course.restaurant.name}
               </span>
             </button>
           ))}

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, Path } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import type { Place } from './types.ts'
@@ -49,13 +49,17 @@ function sortPlaces(places: Place[], sort: Sort): Place[] {
   })
 }
 
+// lets a search build a date course from a row (values are place ids); the saved view leaves it out
+export type CoursePicker = { pick: (place: Place) => void; pending: string | null; failed: string | null }
+
 type Props = {
   food: string
   nearby: Place[]
   famous: Place[]
+  course?: CoursePicker
 }
 
-export default function PlaceTable({ food, nearby, famous }: Props) {
+export default function PlaceTable({ food, nearby, famous, course }: Props) {
   const [tab, setTab] = useState<Tab>(TABS[0])
   const [sort, setSort] = useState<Sort>(TABS[0].sort)
   const [open, setOpen] = useState<string | null>(null)
@@ -119,6 +123,7 @@ export default function PlaceTable({ food, nearby, famous }: Props) {
                   place={place}
                   open={open === place.id}
                   onToggle={() => setOpen(open === place.id ? null : place.id)}
+                  course={course}
                 />
               </li>
             ))}
@@ -133,9 +138,10 @@ type PlaceRowProps = {
   place: Place
   open: boolean
   onToggle: () => void
+  course?: CoursePicker
 }
 
-function PlaceRow({ place, open, onToggle }: PlaceRowProps) {
+function PlaceRow({ place, open, onToggle, course }: PlaceRowProps) {
   return (
     <>
       <button
@@ -166,7 +172,7 @@ function PlaceRow({ place, open, onToggle }: PlaceRowProps) {
             transition={spring}
             className="pb-6"
           >
-            <Reviews place={place} />
+            <Reviews place={place} course={course} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -174,7 +180,7 @@ function PlaceRow({ place, open, onToggle }: PlaceRowProps) {
   )
 }
 
-function Reviews({ place }: { place: Place }) {
+function Reviews({ place, course }: { place: Place; course?: CoursePicker }) {
   return (
     <div className="grid gap-6 rounded-2xl bg-white p-5 md:grid-cols-[1fr_auto] md:gap-10">
       {place.reviews.length === 0 ? (
@@ -196,6 +202,21 @@ function Reviews({ place }: { place: Place }) {
       <div className="flex flex-wrap gap-2 md:flex-col">
         <MapLink href={place.kakaoUrl} label="카카오맵" />
         {place.googleUrl && <MapLink href={place.googleUrl} label="Google 지도" />}
+        {course && (
+          <button
+            type="button"
+            onClick={() => course.pick(place)}
+            disabled={course.pending === place.id}
+            className="flex w-fit items-center gap-2 rounded-full border border-accent px-4 py-2 text-sm font-medium text-accent transition active:scale-[0.98] disabled:opacity-40"
+          >
+            <Path size={16} /> {course.pending === place.id ? '코스 만드는 중…' : '이 식당으로 코스 만들기'}
+          </button>
+        )}
+        {course?.failed === place.id && (
+          <p role="alert" className="text-sm text-accent">
+            코스를 만들지 못했어요. 다시 시도해 주세요.
+          </p>
+        )}
       </div>
     </div>
   )

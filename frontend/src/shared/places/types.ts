@@ -41,13 +41,15 @@ export type Leg = {
   path: [number, number][] | null
 }
 
-// legs join only the stops that exist; routeUrl is null when the restaurant is the only stop
+// legs join only the stops that exist; routeUrl is null when the restaurant is the only stop;
+// picked is true for the course built from a restaurant the user chose (missing or null for the others)
 export type DateCourse = {
   restaurant: Place
   cafe: Spot | null
   sight: Spot | null
   legs: Leg[]
   routeUrl: string | null
+  picked?: boolean | null
 }
 
 export type Places = {

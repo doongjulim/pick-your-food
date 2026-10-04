@@ -1,11 +1,11 @@
 import { Crosshair, MapPin } from '@phosphor-icons/react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { HttpError } from '../../shared/api.ts'
 import DateCourses from '../../shared/places/DateCourses.tsx'
 import PlaceTable from '../../shared/places/PlaceTable.tsx'
-import type { Places } from '../../shared/places/types.ts'
-import { fetchPlaces } from './api.ts'
+import type { Place, Places } from '../../shared/places/types.ts'
+import { fetchCourse, fetchPlaces } from './api.ts'
 import type { Where } from './api.ts'
 
 type State = { status: 'idle' | 'locating' | 'loading' | 'error' } | { status: 'done'; data: Places }
@@ -24,9 +24,21 @@ export default function PlacesSection({ food, onLoaded }: Props) {
   // a slower, older search (or location request) must not overwrite a newer one
   const latest = useRef(0)
   const lastWhere = useRef<Where | null>(null)
+  // the picked-course request in flight or the one that failed, by place id
+  const [picking, setPicking] = useState<{ pending: string | null; failed: string | null }>({ pending: null, failed: null })
+  // which course the course section starts on; a new version remounts it there and scrolls to it
+  const [shown, setShown] = useState({ index: 0, version: 0 })
+  const latestCourse = useRef(0)
+  const coursesRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (shown.version > 0) coursesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [shown.version])
 
   function search(where: Where) {
     const id = ++latest.current
+    setPicking({ pending: null, failed: null })
+    setShown((prev) => ({ ...prev, index: 0 }))
     lastWhere.current = where
     setNotice('')
     setState({ status: 'loading' })
@@ -46,6 +58,37 @@ export default function PlacesSection({ food, onLoaded }: Props) {
           setState({ status: 'error' })
         }
       },
+    )
+  }
+
+  function show(index: number) {
+    setShown((prev) => ({ index, version: prev.version + 1 }))
+  }
+
+  // one picked course at a time: a new one replaces the last, and a restaurant that already has a course just shows it
+  function pick(place: Place) {
+    if (state.status !== 'done') return
+    const data = state.data
+    const existing = data.dateCourses.findIndex((course) => course.restaurant.id === place.id)
+    if (existing >= 0) {
+      show(existing)
+      return
+    }
+    const id = ++latestCourse.current
+    const searchId = latest.current
+    // only the last click counts, and only while its search is still on screen (a new search or locate bumps latest)
+    const current = () => id === latestCourse.current && searchId === latest.current
+    setPicking({ pending: place.id, failed: null })
+    fetchCourse(place).then(
+      (course) => {
+        if (!current()) return
+        const next = { ...data, dateCourses: [course, ...data.dateCourses.filter((other) => !other.picked)] }
+        setState({ status: 'done', data: next })
+        onLoaded(next)
+        setPicking({ pending: null, failed: null })
+        show(0)
+      },
+      () => current() && setPicking({ pending: null, failed: place.id }),
     )
   }
 
@@ -141,11 +184,16 @@ export default function PlacesSection({ food, onLoaded }: Props) {
               <MapPin size={16} className="text-accent" /> {state.data.origin.name} 기준
             </p>
             <div className="mt-6">
-              <PlaceTable food={food} nearby={state.data.nearby} famous={state.data.famous} />
+              <PlaceTable
+                food={food}
+                nearby={state.data.nearby}
+                famous={state.data.famous}
+                course={{ pick, ...picking }}
+              />
             </div>
             {state.data.dateCourses.length > 0 && (
-              <div className="mt-16">
-                <DateCourses courses={state.data.dateCourses} />
+              <div ref={coursesRef} className="mt-16 scroll-mt-8">
+                <DateCourses key={shown.version} courses={state.data.dateCourses} initial={shown.index} />
               </div>
             )}
           </>
