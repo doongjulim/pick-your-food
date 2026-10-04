@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.pickyourfood.place.GooglePlacesClient.GoogleInfo;
 import com.example.pickyourfood.place.KakaoClient.KakaoPlace;
+import com.example.pickyourfood.place.PlacesResponse.Course;
 import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
@@ -276,6 +277,42 @@ class PlaceServiceTest {
 	void unknownPlaceIsNotFound() {
 		assertThatThrownBy(() -> service.locate("없는동네")).isInstanceOfSatisfying(ResponseStatusException.class,
 				e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
+	}
+
+	@Test
+	void pickedRestaurantGetsTheNearestCafeAndSight() {
+		cafesNear(37.55, spot("cafe", 37.554), spot("far cafe", 37.556));
+		sightsNear(37.55, spot("sight", 37.559));
+
+		Course course = service.course("p1", "고른 식당", 37.55, 127.05);
+
+		assertThat(course.cafe().id()).isEqualTo("cafe");
+		assertThat(course.sight().id()).isEqualTo("sight");
+		assertThat(course.legs()).extracting(Leg::from).containsExactly("고른 식당", "cafe");
+		assertThat(course.routeUrl()).startsWith(PlaceService.ROUTE_BASE + "%EA%B3%A0%EB%A5%B8%20%EC%8B%9D%EB%8B%B9,37.55,127.05/");
+	}
+
+	@Test
+	void pickedRestaurantWithAFailedCafeSearchWalksToTheSight() {
+		when(kakao.nearby(KakaoClient.CAFE, 37.55, 127.05, PlaceService.CAFE_RADIUS))
+				.thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY));
+		sightsNear(37.55, spot("sight", 37.559));
+
+		Course course = service.course("p1", "고른 식당", 37.55, 127.05);
+
+		assertThat(course.cafe()).isNull();
+		assertThat(course.legs()).extracting(Leg::from).containsExactly("고른 식당");
+		assertThat(course.legs()).extracting(Leg::to).containsExactly("sight");
+	}
+
+	@Test
+	void pickedRestaurantWithNothingNearbyHasNoLegsOrRoute() {
+		Course course = service.course("p1", "고른 식당", 37.55, 127.05);
+
+		assertThat(course.cafe()).isNull();
+		assertThat(course.sight()).isNull();
+		assertThat(course.legs()).isEmpty();
+		assertThat(course.routeUrl()).isNull();
 	}
 
 	private static final List<double[]> WALK = List.of(

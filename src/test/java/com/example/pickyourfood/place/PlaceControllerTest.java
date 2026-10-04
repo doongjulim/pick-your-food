@@ -10,10 +10,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.pickyourfood.place.PlacesResponse.Course;
 import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
+import com.example.pickyourfood.place.PlacesResponse.Spot;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,6 +105,45 @@ class PlaceControllerTest {
 				.andExpect(jsonPath("$.dateCourses[0].legs[0].path[1][0]").value(37.564))
 				.andExpect(jsonPath("$.dateCourses[0].legs[0].path[1][1]").value(127.051))
 				.andExpect(jsonPath("$.dateCourses[0].legs[1].path").value(nullValue()));
+	}
+
+	@Test
+	void pickedCourseNeedsNoLogin() throws Exception {
+		Spot cafe = new Spot("c1", "어니언", "카페", "", 37.554, 127.05, "");
+		Leg leg = new Leg("고른 식당", "어니언", 445, 7, null);
+		when(places.course("p1", "고른 식당", 37.55, 127.05))
+				.thenReturn(new Course(cafe, null, List.of(leg), "https://map.kakao.com/link/by/walk/a"));
+
+		mvc.perform(get("/api/places/course").param("id", "p1").param("name", " 고른 식당 ").param("lat", "37.55").param("lng", "127.05"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.cafe.name").value("어니언"))
+				.andExpect(jsonPath("$.sight").value(nullValue()))
+				.andExpect(jsonPath("$.legs[0].walkMinutes").value(7))
+				.andExpect(jsonPath("$.routeUrl").value("https://map.kakao.com/link/by/walk/a"))
+				.andExpect(jsonPath("$.restaurant").doesNotExist());
+	}
+
+	@Test
+	void pickedCourseChecksItsInput() throws Exception {
+		String[][] bad = {
+				{ " ", "식당", "37.55", "127.05" },
+				{ "p1", " ", "37.55", "127.05" },
+				{ "x".repeat(101), "식당", "37.55", "127.05" },
+				{ "p1", "가".repeat(101), "37.55", "127.05" },
+				{ "p1", "식당", "91", "127.05" },
+				{ "p1", "식당", "37.55", "-181" },
+				{ "p1", "식당", "NaN", "127.05" },
+				{ "p1", "식당", "37.55", "Infinity" },
+				{ "p1", "식당", "north", "127.05" },
+		};
+		for (String[] params : bad) {
+			mvc.perform(get("/api/places/course")
+							.param("id", params[0]).param("name", params[1]).param("lat", params[2]).param("lng", params[3]))
+					.andExpect(status().isBadRequest());
+		}
+		mvc.perform(get("/api/places/course").param("id", "p1").param("name", "식당").param("lng", "127.05"))
+				.andExpect(status().isBadRequest());
+		verifyNoInteractions(places);
 	}
 
 	@Test

@@ -38,4 +38,9 @@ public record PlacesResponse(Origin origin, List<Place> nearby, List<Place> famo
 	// and routeUrl (a Kakao Map walking route through every stop) is null when the restaurant is the only stop
 	public record DateCourse(Place restaurant, Spot cafe, Spot sight, List<Leg> legs, String routeUrl) {
 	}
+
+	// a course without its restaurant: what GET /api/places/course answers for a restaurant the user picked,
+	// with the same fields and nulls as DateCourse
+	public record Course(Spot cafe, Spot sight, List<Leg> legs, String routeUrl) {
+	}
 }

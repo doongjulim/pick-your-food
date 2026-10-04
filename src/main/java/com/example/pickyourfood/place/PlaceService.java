@@ -2,6 +2,7 @@ package com.example.pickyourfood.place;
 
 import com.example.pickyourfood.place.GooglePlacesClient.GoogleInfo;
 import com.example.pickyourfood.place.KakaoClient.KakaoPlace;
+import com.example.pickyourfood.place.PlacesResponse.Course;
 import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
@@ -131,21 +132,35 @@ public class PlaceService {
 		List<Place> restaurants = famous.stream().limit(COURSES).toList();
 		// start every Kakao lookup before waiting on any of them
 		List<CompletableFuture<List<KakaoPlace>>> cafes = restaurants.stream()
-				.map(restaurant -> candidatesAsync(KakaoClient.CAFE, restaurant, CAFE_RADIUS)).toList();
+				.map(restaurant -> candidatesAsync(KakaoClient.CAFE, stop(restaurant), CAFE_RADIUS)).toList();
 		List<CompletableFuture<List<KakaoPlace>>> sights = restaurants.stream()
-				.map(restaurant -> candidatesAsync(KakaoClient.SIGHT, restaurant, SIGHT_RADIUS)).toList();
+				.map(restaurant -> candidatesAsync(KakaoClient.SIGHT, stop(restaurant), SIGHT_RADIUS)).toList();
 		// picked in course order, so an earlier course keeps its nearest spot
 		Set<String> used = new HashSet<>();
 		List<CompletableFuture<DateCourse>> courses = new ArrayList<>();
 		for (int i = 0; i < restaurants.size(); i++) {
+			Place restaurant = restaurants.get(i);
 			Spot cafe = pick(cafes.get(i).join(), used);
 			Spot sight = pick(sights.get(i).join(), used);
-			courses.add(courseAsync(restaurants.get(i), cafe, sight));
+			courses.add(courseAsync(stop(restaurant), cafe, sight)
+					.thenApply(found -> new DateCourse(restaurant, found.cafe(), found.sight(), found.legs(), found.routeUrl())));
 		}
 		return courses.stream().map(CompletableFuture::join).toList();
 	}
 
-	private CompletableFuture<List<KakaoPlace>> candidatesAsync(String category, Place from, int radius) {
+	// a course from a restaurant the user picked: the nearest cafe and sight, even when a search's courses use them
+	public Course course(String id, String name, double lat, double lng) {
+		Stop start = new Stop(id, name, lat, lng);
+		CompletableFuture<List<KakaoPlace>> cafes = candidatesAsync(KakaoClient.CAFE, start, CAFE_RADIUS);
+		CompletableFuture<List<KakaoPlace>> sights = candidatesAsync(KakaoClient.SIGHT, start, SIGHT_RADIUS);
+		return courseAsync(start, pick(cafes.join(), new HashSet<>()), pick(sights.join(), new HashSet<>())).join();
+	}
+
+	private static Stop stop(Place place) {
+		return new Stop(place.id(), place.name(), place.lat(), place.lng());
+	}
+
+	private CompletableFuture<List<KakaoPlace>> candidatesAsync(String category, Stop from, int radius) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
 				return kakao.nearby(category, from.lat(), from.lng(), radius);
@@ -168,9 +183,9 @@ public class PlaceService {
 				.orElse(null);
 	}
 
-	private CompletableFuture<DateCourse> courseAsync(Place restaurant, Spot cafe, Spot sight) {
+	private CompletableFuture<Course> courseAsync(Stop start, Spot cafe, Spot sight) {
 		List<Stop> stops = new ArrayList<>();
-		stops.add(new Stop(restaurant.id(), restaurant.name(), restaurant.lat(), restaurant.lng()));
+		stops.add(start);
 		if (cafe != null) stops.add(new Stop(cafe.id(), cafe.name(), cafe.lat(), cafe.lng()));
 		if (sight != null) stops.add(new Stop(sight.id(), sight.name(), sight.lat(), sight.lng()));
 		List<CompletableFuture<Leg>> legs = IntStream.range(1, stops.size())
@@ -180,7 +195,7 @@ public class PlaceService {
 						.map(stop -> routeName(stop.name()) + "," + stop.lat() + "," + stop.lng())
 						.collect(Collectors.joining("/"));
 		return CompletableFuture.allOf(legs.toArray(CompletableFuture[]::new))
-				.thenApply(done -> new DateCourse(restaurant, cafe, sight, legs.stream().map(CompletableFuture::join).toList(), routeUrl));
+				.thenApply(done -> new Course(cafe, sight, legs.stream().map(CompletableFuture::join).toList(), routeUrl));
 	}
 
 	private CompletableFuture<Leg> legAsync(Stop from, Stop to) {
