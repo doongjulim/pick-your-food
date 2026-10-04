@@ -135,6 +135,8 @@ class PlaceControllerTest {
 				{ "p1", "식당", "NaN", "127.05" },
 				{ "p1", "식당", "37.55", "Infinity" },
 				{ "p1", "식당", "north", "127.05" },
+				{ "p1", "식당\n", "37.55", "127.05" },
+				{ "p1\n", "식당", "37.55", "127.05" },
 		};
 		for (String[] params : bad) {
 			mvc.perform(get("/api/places/course")

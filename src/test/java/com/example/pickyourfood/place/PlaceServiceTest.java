@@ -358,6 +358,22 @@ class PlaceServiceTest {
 	}
 
 	@Test
+	void pickedCourseWithAFakeLocationDoesNotPoisonTheRouteCacheForTheRealRestaurant() {
+		// a client reuses a real restaurant's id with coordinates nowhere near it
+		cafesNear(37.99, spot("cafe", 37.991));
+		when(tmap.route(37.99, 127.05, 37.991, 127.05)).thenReturn(Optional.of(new Route(1, 60, WALK)));
+		service.course("r1", "가짜 위치", 37.99, 127.05);
+
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		when(tmap.route(37.56, 127.05, 37.564, 127.05)).thenReturn(Optional.of(new Route(512, 421, WALK)));
+
+		Leg leg = service.search("ramen", ORIGIN).dateCourses().get(0).legs().get(0);
+
+		assertThat(leg.meters()).isEqualTo(512);
+	}
+
+	@Test
 	void pathsAreRoundedAndLongOnesThinnedKeepingBothEnds() {
 		assertThat(PlaceService.thin(List.of(new double[] { 37.123456789, 127.987654321 })))
 				.containsExactly(new double[] { 37.12346, 127.98765 });

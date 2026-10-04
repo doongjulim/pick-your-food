@@ -45,7 +45,7 @@ class PlaceController {
 	}
 
 	private static boolean fits(String value) {
-		return !value.isBlank() && value.strip().length() <= 100;
+		return !value.isBlank() && value.strip().length() <= 100 && value.chars().noneMatch(Character::isISOControl);
 	}
 
 	// the Kakao Maps JavaScript key is public by design (Kakao only honours it on our domains); null hides the map

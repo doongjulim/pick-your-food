@@ -64,6 +64,7 @@ public class PlaceService {
 	// ponytail: unbounded map, entries only expire when read again; swap for Caffeine if memory grows
 	private final Map<String, Cached> cache = new ConcurrentHashMap<>();
 	// successful routes only, so a TMAP outage is retried on the next search
+	// ponytail: client-chosen start stops can add entries too; unbounded until read again, swap for Caffeine if memory grows
 	private final Map<String, CachedRoute> routes = new ConcurrentHashMap<>();
 	private final ExecutorService pool = Executors.newFixedThreadPool(10, task -> {
 		Thread thread = new Thread(task, "place-lookups");
@@ -210,7 +211,8 @@ public class PlaceService {
 
 	// TMAP's walking route, thinned; empty without a key or when TMAP fails, and the leg falls back to the straight line
 	private Optional<Route> route(Stop from, Stop to) {
-		String key = from.id() + ">" + to.id();
+		// from's coordinates too, so a client-chosen start can't poison the entry a real restaurant's course reads
+		String key = from.id() + "@" + from.lat() + "," + from.lng() + ">" + to.id();
 		CachedRoute cached = routes.get(key);
 		if (cached != null && cached.at().plus(CACHE_TTL).isAfter(Instant.now())) return Optional.of(cached.route());
 		try {
@@ -251,7 +253,7 @@ public class PlaceService {
 		return (int) Math.round(2 * 6_371_000 * Math.asin(Math.sqrt(a)));
 	}
 
-	// id keys the route cache
+	// id and coordinates key the route cache
 	private record Stop(String id, String name, double lat, double lng) {
 	}
 
