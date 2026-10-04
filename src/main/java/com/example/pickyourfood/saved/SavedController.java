@@ -72,9 +72,11 @@ class SavedController {
 				&& (r.places() == null || valid(r.places()));
 	}
 
+	// up to three courses from the search and one the user picked
 	private static boolean valid(SavedResult.Places p) {
 		return p.origin() != null && p.origin().name() != null && p.origin().name().length() <= 200
-				&& fits(p.nearby(), 10) && fits(p.famous(), 10) && fits(p.dateCourses(), 3)
+				&& fits(p.nearby(), 10) && fits(p.famous(), 10) && fits(p.dateCourses(), 4)
+				&& p.dateCourses().stream().filter(c -> Boolean.TRUE.equals(c.picked())).count() <= 1
 				&& p.dateCourses().stream().allMatch(c -> c.restaurant() != null && fits(c.legs(), 2)
 						&& c.legs().stream().allMatch(leg -> leg.path() == null || validPath(leg.path())));
 	}

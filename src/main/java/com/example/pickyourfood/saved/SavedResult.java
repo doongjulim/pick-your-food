@@ -24,6 +24,7 @@ record SavedResult(String title, Food best, List<Food> alternatives, Places plac
 	record Leg(String from, String to, int meters, int walkMinutes, List<double[]> path) {
 	}
 
-	record DateCourse(Place restaurant, Spot cafe, Spot sight, List<Leg> legs, String routeUrl) {
+	// picked is true for the course built from a restaurant the user chose; null for the others and older results
+	record DateCourse(Place restaurant, Spot cafe, Spot sight, List<Leg> legs, String routeUrl, Boolean picked) {
 	}
 }

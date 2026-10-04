@@ -147,6 +147,7 @@ class SavedControllerTest {
 				.andExpect(jsonPath("$.result.places.dateCourses[0].cafe.name").value("어니언"))
 				.andExpect(jsonPath("$.result.places.dateCourses[0].legs[0].walkMinutes").value(5))
 				.andExpect(jsonPath("$.result.places.dateCourses[0].legs[0].path").isEmpty())
+				.andExpect(jsonPath("$.result.places.dateCourses[0].picked").isEmpty())
 				.andExpect(jsonPath("$.result.secret").doesNotExist());
 		assertThat(jdbc.sql("select payload from saved_result where id = ?").param(id).query(String.class).single())
 				.doesNotContain("국물이 진해요", "maps.google.com", "unknown fields");
@@ -172,7 +173,7 @@ class SavedControllerTest {
 		rejects("{\"title\":\"t\",\"best\":" + food + ",\"alternatives\":[" + repeat(food, 6) + "]}");
 		rejects(withPlaces(repeat(place, 11), "", ""));
 		rejects(withPlaces("", repeat(place, 11), ""));
-		rejects(withPlaces("", "", repeat(course, 4)));
+		rejects(withPlaces("", "", repeat(course, 5)));
 		rejects("{\"title\":\"t\",\"best\":{\"id\":\"f\",\"name\":\"메뉴\",\"description\":\"" + "가".repeat(70_000)
 				+ "\"},\"alternatives\":[]}");
 	}
@@ -209,6 +210,22 @@ class SavedControllerTest {
 	private static String withLegs(String legs) {
 		String place = "{\"id\":\"p\",\"name\":\"식당\",\"address\":\"\",\"distanceMeters\":1,\"lat\":0,\"lng\":0,\"kakaoUrl\":\"\"}";
 		return withPlaces("", "", "{\"restaurant\":" + place + ",\"cafe\":null,\"sight\":null,\"legs\":[" + legs + "],\"routeUrl\":null}");
+	}
+
+	@Test
+	void pickedCourseIsKeptAndAtMostOneOfFourCourses() throws Exception {
+		String place = "{\"id\":\"p\",\"name\":\"식당\",\"address\":\"\",\"distanceMeters\":1,\"lat\":0,\"lng\":0,\"kakaoUrl\":\"\"}";
+		String course = "{\"restaurant\":" + place + ",\"cafe\":null,\"sight\":null,\"legs\":[],\"routeUrl\":null}";
+		String picked = "{\"restaurant\":" + place + ",\"cafe\":null,\"sight\":null,\"legs\":[],\"routeUrl\":null,\"picked\":true}";
+		String id = save(SEOYUN, withPlaces("", "", picked + "," + repeat(course, 3)));
+
+		mvc.perform(get("/api/saved/" + id))
+				.andExpect(jsonPath("$.result.places.dateCourses", hasSize(4)))
+				.andExpect(jsonPath("$.result.places.dateCourses[0].picked").value(true))
+				.andExpect(jsonPath("$.result.places.dateCourses[1].picked").isEmpty());
+
+		rejects(withPlaces("", "", picked + "," + repeat(course, 4)));
+		rejects(withPlaces("", "", picked + "," + picked));
 	}
 
 	@Test
