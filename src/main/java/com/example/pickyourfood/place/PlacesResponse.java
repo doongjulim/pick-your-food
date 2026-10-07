@@ -45,4 +45,8 @@ public record PlacesResponse(Origin origin, List<Place> nearby, List<Place> famo
 	// with the same fields and nulls as DateCourse
 	public record Course(Spot cafe, Spot sight, List<Leg> legs, String routeUrl, List<Spot> cafes, List<Spot> sights) {
 	}
+
+	// the walk through stops the client chose: what GET /api/places/legs answers, with the same fields and nulls as DateCourse
+	public record Walk(List<Leg> legs, String routeUrl) {
+	}
 }

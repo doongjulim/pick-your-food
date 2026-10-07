@@ -15,12 +15,14 @@ import static org.mockito.Mockito.when;
 
 import com.example.pickyourfood.place.GooglePlacesClient.GoogleInfo;
 import com.example.pickyourfood.place.KakaoClient.KakaoPlace;
+import com.example.pickyourfood.place.PlaceService.Stop;
 import com.example.pickyourfood.place.PlacesResponse.Course;
 import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
 import com.example.pickyourfood.place.PlacesResponse.Spot;
+import com.example.pickyourfood.place.PlacesResponse.Walk;
 import com.example.pickyourfood.place.TmapClient.Route;
 import java.util.List;
 import java.util.Optional;
@@ -393,6 +395,39 @@ class PlaceServiceTest {
 		cafesNear(37.99, spot("cafe", 37.991));
 		when(tmap.route(37.99, 127.05, 37.991, 127.05)).thenReturn(Optional.of(new Route(1, 60, WALK)));
 		service.course("r1", "가짜 위치", 37.99, 127.05);
+
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		when(tmap.route(37.56, 127.05, 37.564, 127.05)).thenReturn(Optional.of(new Route(512, 421, WALK)));
+
+		Leg leg = service.search("ramen", ORIGIN).dateCourses().get(0).legs().get(0);
+
+		assertThat(leg.meters()).isEqualTo(512);
+	}
+
+	@Test
+	void walkJoinsTheStopsInOrder() {
+		Walk walk = service.walk(List.of(
+				new Stop("r1", "식당", 37.56, 127.05), new Stop("c2", "다른 카페", 37.564, 127.05), new Stop("s1", "볼거리", 37.566, 127.05)));
+
+		assertThat(walk.legs()).extracting(Leg::from).containsExactly("식당", "다른 카페");
+		assertThat(walk.legs()).extracting(Leg::to).containsExactly("다른 카페", "볼거리");
+		assertThat(walk.routeUrl()).isEqualTo(PlaceService.ROUTE_BASE
+				+ "%EC%8B%9D%EB%8B%B9,37.56,127.05/%EB%8B%A4%EB%A5%B8%20%EC%B9%B4%ED%8E%98,37.564,127.05/%EB%B3%BC%EA%B1%B0%EB%A6%AC,37.566,127.05");
+	}
+
+	@Test
+	void walkWithTwoStopsHasOneLeg() {
+		Walk walk = service.walk(List.of(new Stop("r1", "식당", 37.56, 127.05), new Stop("s1", "볼거리", 37.566, 127.05)));
+
+		assertThat(walk.legs()).extracting(Leg::to).containsExactly("볼거리");
+	}
+
+	@Test
+	void walkWithAFakeCafeLocationDoesNotPoisonTheRouteCacheForTheRealCafe() {
+		// a client reuses a real cafe's id with coordinates nowhere near it
+		when(tmap.route(37.56, 127.05, 37.99, 127.05)).thenReturn(Optional.of(new Route(1, 60, WALK)));
+		service.walk(List.of(new Stop("r1", "r1", 37.56, 127.05), new Stop("cafe", "가짜 카페", 37.99, 127.05)));
 
 		famousRanked("r1");
 		cafesNear(37.56, spot("cafe", 37.564));

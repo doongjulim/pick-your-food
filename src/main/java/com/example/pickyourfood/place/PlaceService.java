@@ -8,6 +8,7 @@ import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
 import com.example.pickyourfood.place.PlacesResponse.Spot;
+import com.example.pickyourfood.place.PlacesResponse.Walk;
 import com.example.pickyourfood.place.TmapClient.Route;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -156,6 +157,11 @@ public class PlaceService {
 		return courseAsync(start, cafes.join(), sights.join(), new HashSet<>()).join();
 	}
 
+	// legs and route through stops the client chose (a swapped cafe or sight), in order
+	public Walk walk(List<Stop> stops) {
+		return walkAsync(stops).join();
+	}
+
 	private static Stop stop(Place place) {
 		return new Stop(place.id(), place.name(), place.lat(), place.lng());
 	}
@@ -200,6 +206,10 @@ public class PlaceService {
 		stops.add(start);
 		if (cafe != null) stops.add(new Stop(cafe.id(), cafe.name(), cafe.lat(), cafe.lng()));
 		if (sight != null) stops.add(new Stop(sight.id(), sight.name(), sight.lat(), sight.lng()));
+		return walkAsync(stops).thenApply(walk -> new Course(cafe, sight, walk.legs(), walk.routeUrl(), spots(cafes), spots(sights)));
+	}
+
+	private CompletableFuture<Walk> walkAsync(List<Stop> stops) {
 		List<CompletableFuture<Leg>> legs = IntStream.range(1, stops.size())
 				.mapToObj(i -> legAsync(stops.get(i - 1), stops.get(i))).toList();
 		String routeUrl = legs.isEmpty() ? null
@@ -207,8 +217,7 @@ public class PlaceService {
 						.map(stop -> routeName(stop.name()) + "," + stop.lat() + "," + stop.lng())
 						.collect(Collectors.joining("/"));
 		return CompletableFuture.allOf(legs.toArray(CompletableFuture[]::new))
-				.thenApply(done -> new Course(cafe, sight, legs.stream().map(CompletableFuture::join).toList(), routeUrl,
-						spots(cafes), spots(sights)));
+				.thenApply(done -> new Walk(legs.stream().map(CompletableFuture::join).toList(), routeUrl));
 	}
 
 	private CompletableFuture<Leg> legAsync(Stop from, Stop to) {
@@ -223,8 +232,8 @@ public class PlaceService {
 
 	// TMAP's walking route, thinned; empty without a key or when TMAP fails, and the leg falls back to the straight line
 	private Optional<Route> route(Stop from, Stop to) {
-		// from's coordinates too, so a client-chosen start can't poison the entry a real restaurant's course reads
-		String key = from.id() + "@" + from.lat() + "," + from.lng() + ">" + to.id();
+		// both ends with their coordinates, so client-chosen stops can't poison the entry a real course reads
+		String key = from.id() + "@" + from.lat() + "," + from.lng() + ">" + to.id() + "@" + to.lat() + "," + to.lng();
 		CachedRoute cached = routes.get(key);
 		if (cached != null && cached.at().plus(CACHE_TTL).isAfter(Instant.now())) return Optional.of(cached.route());
 		try {
@@ -266,7 +275,7 @@ public class PlaceService {
 	}
 
 	// id and coordinates key the route cache
-	private record Stop(String id, String name, double lat, double lng) {
+	record Stop(String id, String name, double lat, double lng) {
 	}
 
 	private record Cached(Optional<GoogleInfo> info, Instant at) {

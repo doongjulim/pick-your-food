@@ -10,12 +10,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.pickyourfood.place.PlaceService.Stop;
 import com.example.pickyourfood.place.PlacesResponse.Course;
 import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
 import com.example.pickyourfood.place.PlacesResponse.Spot;
+import com.example.pickyourfood.place.PlacesResponse.Walk;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest(properties = "kakao.js-key=test-js-key")
@@ -160,5 +163,47 @@ class PlaceControllerTest {
 	@Test
 	void mapKeyIsNullWithoutAKey() {
 		assertThat(new PlaceController(places, "").mapKey().key()).isNull();
+	}
+
+	// stops as "|"-separated values per parameter, in order
+	private static MockHttpServletRequestBuilder legs(String ids, String names, String lats, String lngs) {
+		return get("/api/places/legs")
+				.param("id", ids.split("\\|", -1)).param("name", names.split("\\|", -1))
+				.param("lat", lats.split("\\|", -1)).param("lng", lngs.split("\\|", -1));
+	}
+
+	@Test
+	void walkNeedsNoLogin() throws Exception {
+		Leg first = new Leg("고른 식당", "어니언, 성수", 445, 7, null);
+		Leg second = new Leg("어니언, 성수", "서울숲", 600, 9, null);
+		when(places.walk(List.of(new Stop("p1", "고른 식당", 37.55, 127.05), new Stop("c1", "어니언, 성수", 37.554, 127.05),
+				new Stop("s1", "서울숲", 37.559, 127.05))))
+				.thenReturn(new Walk(List.of(first, second), "https://map.kakao.com/link/by/walk/a"));
+
+		mvc.perform(legs("p1|c1|s1", " 고른 식당 |어니언, 성수|서울숲", "37.55|37.554|37.559", "127.05|127.05|127.05"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.legs[0].to").value("어니언, 성수"))
+				.andExpect(jsonPath("$.legs[1].walkMinutes").value(9))
+				.andExpect(jsonPath("$.routeUrl").value("https://map.kakao.com/link/by/walk/a"));
+	}
+
+	@Test
+	void walkChecksItsInput() throws Exception {
+		MockHttpServletRequestBuilder[] bad = {
+				legs("p1", "식당", "37.55", "127.05"),
+				legs("a|b|c|d", "가|나|다|라", "37.55|37.55|37.55|37.55", "127.05|127.05|127.05|127.05"),
+				legs("p1|c1", "식당", "37.55|37.554", "127.05|127.05"),
+				legs("p1|c1", "식당|카페", "37.55", "127.05|127.05"),
+				legs(" |c1", "식당|카페", "37.55|37.554", "127.05|127.05"),
+				legs("p1|c1", "식당|" + "가".repeat(101), "37.55|37.554", "127.05|127.05"),
+				legs("p1|c1", "식당|카페\n", "37.55|37.554", "127.05|127.05"),
+				legs("p1|c1", "식당|카페", "37.55|91", "127.05|127.05"),
+				legs("p1|c1", "식당|카페", "37.55|37.554", "127.05|-181"),
+				legs("p1|c1", "식당|카페", "37.55|NaN", "127.05|127.05"),
+				legs("p1|c1", "식당|카페", "37.55|north", "127.05|127.05"),
+				get("/api/places/legs").param("id", "p1", "c1").param("name", "식당", "카페").param("lat", "37.55", "37.554"),
+		};
+		for (MockHttpServletRequestBuilder request : bad) mvc.perform(request).andExpect(status().isBadRequest());
+		verifyNoInteractions(places);
 	}
 }
