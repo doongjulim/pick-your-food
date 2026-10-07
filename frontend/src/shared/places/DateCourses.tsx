@@ -1,15 +1,20 @@
-import { Coffee, ForkKnife, MapTrifold, Mountains, PersonSimpleWalk } from '@phosphor-icons/react'
+import { ArrowsClockwise, Coffee, ForkKnife, MapTrifold, Mountains, PersonSimpleWalk } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import type { DateCourse, Leg } from './types.ts'
+import type { DateCourse, Leg, Spot } from './types.ts'
 import { distance } from './format.ts'
 import MapLink from './MapLink.tsx'
 import CourseMap from './CourseMap.tsx'
 
-// leg is the walk into this step, shown above it
+type Kind = 'cafe' | 'sight'
+
+// lets a search swap a course's cafe or sight for another candidate (values are course indexes); the saved view leaves it out
+export type SpotSwapper = { change: (course: number, kind: Kind, spot: Spot) => void; pending: number | null; failed: number | null }
+
+// leg is the walk into this step, shown above it; choice is the candidates a cafe or sight can be swapped to
 type Step = { icon: Icon; label: string; leg: string | null } & (
-  | { name: string; detail: string; url: string }
+  | { name: string; detail: string; url: string; choice?: { kind: Kind; current: string; candidates: Spot[] } }
   | { missing: string }
 )
 
@@ -22,17 +27,36 @@ function walk(leg: Leg, fromRestaurant: boolean): string {
 }
 
 // starts on the initial course (the first by default); PlacesSection remounts this for every new search and picked course
-export default function DateCourses({ courses, initial = 0 }: { courses: DateCourse[]; initial?: number }) {
+export default function DateCourses({ courses, initial = 0, swap }: { courses: DateCourse[]; initial?: number; swap?: SpotSwapper }) {
   const [selected, setSelected] = useState(initial)
-  const { restaurant, cafe, sight, legs, routeUrl, picked } = courses[selected]
+  // which step's candidate list is open; one at a time, and closed on another tab
+  const [open, setOpen] = useState<Kind | null>(null)
+  const { restaurant, cafe, sight, cafes = [], sights = [], legs, routeUrl, picked } = courses[selected]
+  const busy = swap?.pending === selected
   const steps: Step[] = [
     { icon: ForkKnife, label: '식사', leg: null, name: restaurant.name, detail: restaurant.address, url: restaurant.kakaoUrl },
     cafe
-      ? { icon: Coffee, label: '카페', leg: walk(legs[0], false), name: cafe.name, detail: cafe.category, url: cafe.kakaoUrl }
+      ? {
+          icon: Coffee,
+          label: '카페',
+          leg: walk(legs[0], false),
+          name: cafe.name,
+          detail: cafe.category,
+          url: cafe.kakaoUrl,
+          choice: { kind: 'cafe', current: cafe.id, candidates: cafes },
+        }
       : { icon: Coffee, label: '카페', leg: null, missing: '근처에 카페를 찾지 못했어요' },
     sight
       ? // the sight's leg is always the last one; without a cafe it starts at the restaurant
-        { icon: Mountains, label: '볼거리', leg: walk(legs[legs.length - 1], !cafe), name: sight.name, detail: sight.category, url: sight.kakaoUrl }
+        {
+          icon: Mountains,
+          label: '볼거리',
+          leg: walk(legs[legs.length - 1], !cafe),
+          name: sight.name,
+          detail: sight.category,
+          url: sight.kakaoUrl,
+          choice: { kind: 'sight', current: sight.id, candidates: sights },
+        }
       : { icon: Mountains, label: '볼거리', leg: null, missing: '근처에 볼거리를 찾지 못했어요' },
   ]
   const straight = legs.filter((leg) => !leg.path).length
@@ -48,7 +72,10 @@ export default function DateCourses({ courses, initial = 0 }: { courses: DateCou
             <button
               key={course.restaurant.id}
               type="button"
-              onClick={() => setSelected(index)}
+              onClick={() => {
+                setSelected(index)
+                setOpen(null)
+              }}
               className="relative max-w-full rounded-full px-4 py-2 text-sm font-medium transition active:scale-[0.98]"
             >
               {index === selected && (
@@ -84,7 +111,7 @@ export default function DateCourses({ courses, initial = 0 }: { courses: DateCou
               <p className={`mb-3 flex h-4 items-center gap-1.5 font-mono text-xs text-zinc-500 ${step.leg ? '' : 'max-md:hidden'}`}>
                 {step.leg && (
                   <>
-                    <PersonSimpleWalk size={14} /> {step.leg}
+                    <PersonSimpleWalk size={14} /> {busy ? '경로 다시 계산 중…' : step.leg}
                   </>
                 )}
               </p>
@@ -98,15 +125,37 @@ export default function DateCourses({ courses, initial = 0 }: { courses: DateCou
                 <>
                   <p className="mt-3 text-xl font-semibold tracking-tight">{step.name}</p>
                   <p className="mt-1 text-sm text-zinc-500">{step.detail}</p>
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <MapLink href={step.url} label="카카오맵" />
+                    {swap && step.choice && step.choice.candidates.length > 1 && (
+                      <SwapButton
+                        kind={step.choice.kind}
+                        open={open === step.choice.kind}
+                        disabled={busy}
+                        onToggle={(kind) => setOpen(open === kind ? null : kind)}
+                      />
+                    )}
                   </div>
+                  {swap && step.choice && open === step.choice.kind && (
+                    <Candidates
+                      choice={step.choice}
+                      onPick={(kind, spot) => {
+                        setOpen(null)
+                        swap.change(selected, kind, spot)
+                      }}
+                    />
+                  )}
                 </>
               )}
             </motion.li>
           ))}
         </motion.ol>
       </AnimatePresence>
+      {swap?.failed === selected && (
+        <p role="alert" className="mt-6 text-sm text-accent">
+          바꾸지 못했어요. 다시 시도해 주세요.
+        </p>
+      )}
       {/* a restaurant-only course has nothing to draw */}
       {legs.length > 0 && <CourseMap course={courses[selected]} />}
       {routeUrl && (
@@ -123,5 +172,48 @@ export default function DateCourses({ courses, initial = 0 }: { courses: DateCou
         </div>
       )}
     </div>
+  )
+}
+
+function SwapButton({ kind, open, disabled, onToggle }: { kind: Kind; open: boolean; disabled: boolean; onToggle: (kind: Kind) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(kind)}
+      disabled={disabled}
+      aria-expanded={open}
+      className="flex w-fit items-center gap-2 rounded-full border border-accent px-4 py-2 text-sm font-medium text-accent transition active:scale-[0.98] disabled:opacity-40"
+    >
+      <ArrowsClockwise size={16} /> 다른 곳
+    </button>
+  )
+}
+
+function Candidates({ choice, onPick }: { choice: { kind: Kind; current: string; candidates: Spot[] }; onPick: (kind: Kind, spot: Spot) => void }) {
+  return (
+    <ul className="mt-4 divide-y divide-zinc-200 border-y border-zinc-200">
+      {choice.candidates.map((spot) => {
+        const current = spot.id === choice.current
+        return (
+          <li key={spot.id}>
+            <button
+              type="button"
+              onClick={() => onPick(choice.kind, spot)}
+              disabled={current}
+              className="flex w-full items-baseline justify-between gap-3 py-3 text-left transition hover:text-accent disabled:hover:text-inherit"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium">{spot.name}</span>
+                <span className="block truncate text-xs text-zinc-500">{spot.category}</span>
+              </span>
+              <span className="shrink-0 font-mono text-xs text-zinc-500">
+                {current && <span className="text-accent">지금 </span>}
+                {spot.distanceMeters !== undefined && distance(spot.distanceMeters)}
+              </span>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
   )
 }

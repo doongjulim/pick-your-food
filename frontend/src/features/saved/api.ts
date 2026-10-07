@@ -1,6 +1,6 @@
 import { HttpError, request } from '../../shared/api.ts'
 import type { Food } from '../../shared/api.ts'
-import type { DateCourse, Place, Places } from '../../shared/places/types.ts'
+import type { DateCourse, Place, Places, Spot } from '../../shared/places/types.ts'
 
 // what gets saved: the menu and, when searched, the places and date courses around it
 export type Saved = {
@@ -47,6 +47,15 @@ function kakaoOnly({ id, name, address, distanceMeters, lat, lng, kakaoUrl }: Pl
   return { id, name, address, distanceMeters, lat, lng, kakaoUrl }
 }
 
+// candidates only serve swapping on the search screen, and the saved format keeps no distance for a spot
+function savedCourse({ restaurant, cafe, sight, legs, routeUrl, picked }: DateCourse): DateCourse {
+  return { restaurant, cafe: cafe && savedSpot(cafe), sight: sight && savedSpot(sight), legs, routeUrl, picked }
+}
+
+function savedSpot({ id, name, category, address, lat, lng, kakaoUrl }: Spot): Spot {
+  return { id, name, category, address, lat, lng, kakaoUrl }
+}
+
 // the tables show the missing Google fields as unknown
 function withoutGoogle(place: KakaoPlace): Place {
   return { ...place, rating: null, reviewCount: null, priceLevel: null, reviews: [], googleUrl: null }
@@ -56,7 +65,10 @@ export async function saveResult(saved: Saved): Promise<string> {
   const { id } = await request<{ id: string }>('/api/saved', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...saved, places: saved.places && mapPlaces(saved.places, kakaoOnly) }),
+    body: JSON.stringify({
+      ...saved,
+      places: saved.places && mapPlaces({ ...saved.places, dateCourses: saved.places.dateCourses.map(savedCourse) }, kakaoOnly),
+    }),
   })
   return id
 }

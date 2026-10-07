@@ -21,6 +21,7 @@ export type Place = {
   googleUrl: string | null
 }
 
+// distanceMeters is Kakao's distance from the course's restaurant; saved results have none
 export type Spot = {
   id: string
   name: string
@@ -29,6 +30,7 @@ export type Spot = {
   lat: number
   lng: number
   kakaoUrl: string
+  distanceMeters?: number
 }
 
 // walking distance between two stops; path is the walking route as [lat, lng] points,
@@ -42,7 +44,8 @@ export type Leg = {
 }
 
 // legs join only the stops that exist; routeUrl is null when the restaurant is the only stop;
-// picked is true for the course built from a restaurant the user chose (missing or null for the others)
+// picked is true for the course built from a restaurant the user chose (missing or null for the others);
+// cafes and sights are the nearest candidates to swap to, only in a fresh search (saved results have none)
 export type DateCourse = {
   restaurant: Place
   cafe: Spot | null
@@ -50,6 +53,8 @@ export type DateCourse = {
   legs: Leg[]
   routeUrl: string | null
   picked?: boolean | null
+  cafes?: Spot[]
+  sights?: Spot[]
 }
 
 export type Places = {

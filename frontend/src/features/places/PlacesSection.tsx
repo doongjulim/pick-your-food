@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { HttpError } from '../../shared/api.ts'
 import DateCourses from '../../shared/places/DateCourses.tsx'
+import type { SpotSwapper } from '../../shared/places/DateCourses.tsx'
 import PlaceTable from '../../shared/places/PlaceTable.tsx'
-import type { Place, Places } from '../../shared/places/types.ts'
-import { fetchCourse, fetchPlaces } from './api.ts'
+import type { DateCourse, Place, Places } from '../../shared/places/types.ts'
+import { fetchCourse, fetchLegs, fetchPlaces } from './api.ts'
 import type { Where } from './api.ts'
 
 type State = { status: 'idle' | 'locating' | 'loading' | 'error' } | { status: 'done'; data: Places }
@@ -26,8 +27,11 @@ export default function PlacesSection({ food, onLoaded }: Props) {
   const lastWhere = useRef<Where | null>(null)
   // the picked-course request in flight or the one that failed, by place id
   const [picking, setPicking] = useState<{ pending: string | null; failed: string | null }>({ pending: null, failed: null })
+  // the swap request in flight or the one that failed, by course index
+  const [swapping, setSwapping] = useState<{ pending: number | null; failed: number | null }>({ pending: null, failed: null })
   // which course the course section starts on; a new version remounts it there and scrolls to it
   const [shown, setShown] = useState({ index: 0, version: 0 })
+  // picked courses and swaps share one counter: of the two, only the last click counts
   const latestCourse = useRef(0)
   const coursesRef = useRef<HTMLDivElement>(null)
 
@@ -38,6 +42,7 @@ export default function PlacesSection({ food, onLoaded }: Props) {
   function search(where: Where) {
     const id = ++latest.current
     setPicking({ pending: null, failed: null })
+    setSwapping({ pending: null, failed: null })
     setShown((prev) => ({ ...prev, index: 0 }))
     lastWhere.current = where
     setNotice('')
@@ -73,6 +78,7 @@ export default function PlacesSection({ food, onLoaded }: Props) {
     const existing = data.dateCourses.findIndex((course) => course.restaurant.id === place.id)
     if (existing >= 0) {
       latestCourse.current++
+      setSwapping({ pending: null, failed: null })
       setPicking({ pending: null, failed: null })
       show(existing)
       return
@@ -81,6 +87,7 @@ export default function PlacesSection({ food, onLoaded }: Props) {
     const searchId = latest.current
     // only the last click counts, and only while its search is still on screen (a new search or locate bumps latest)
     const current = () => id === latestCourse.current && searchId === latest.current
+    setSwapping({ pending: null, failed: null })
     setPicking({ pending: place.id, failed: null })
     fetchCourse(place).then(
       (course) => {
@@ -92,6 +99,28 @@ export default function PlacesSection({ food, onLoaded }: Props) {
         show(0)
       },
       () => current() && setPicking({ pending: null, failed: place.id }),
+    )
+  }
+
+  // the swapped spot shows only with its new legs, so a dropped or failed request leaves the course as it was
+  const change: SpotSwapper['change'] = (index, kind, spot) => {
+    if (state.status !== 'done') return
+    const data = state.data
+    const id = ++latestCourse.current
+    const searchId = latest.current
+    const current = () => id === latestCourse.current && searchId === latest.current
+    const course: DateCourse = { ...data.dateCourses[index], [kind]: spot }
+    setPicking({ pending: null, failed: null })
+    setSwapping({ pending: index, failed: null })
+    fetchLegs([course.restaurant, course.cafe, course.sight].filter((stop) => stop !== null)).then(
+      (walk) => {
+        if (!current()) return
+        const next = { ...data, dateCourses: data.dateCourses.map((other, i) => (i === index ? { ...course, ...walk } : other)) }
+        setState({ status: 'done', data: next })
+        onLoaded(next)
+        setSwapping({ pending: null, failed: null })
+      },
+      () => current() && setSwapping({ pending: null, failed: index }),
     )
   }
 
@@ -196,7 +225,7 @@ export default function PlacesSection({ food, onLoaded }: Props) {
             </div>
             {state.data.dateCourses.length > 0 && (
               <div ref={coursesRef} className="mt-16 scroll-mt-8">
-                <DateCourses key={shown.version} courses={state.data.dateCourses} initial={shown.index} />
+                <DateCourses key={shown.version} courses={state.data.dateCourses} initial={shown.index} swap={{ change, ...swapping }} />
               </div>
             )}
           </>
