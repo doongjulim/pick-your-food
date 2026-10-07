@@ -26,7 +26,8 @@ public record PlacesResponse(Origin origin, List<Place> nearby, List<Place> famo
 	public record Review(String author, Integer rating, String text, String when) {
 	}
 
-	public record Spot(String id, String name, String category, String address, double lat, double lng, String kakaoUrl) {
+	// distanceMeters is Kakao's distance from the restaurant the spot was searched around
+	public record Spot(String id, String name, String category, String address, double lat, double lng, String kakaoUrl, int distanceMeters) {
 	}
 
 	// walking distance and time between two stops: TMAP's route, with path its [lat, lng] points, or when that is
@@ -35,12 +36,13 @@ public record PlacesResponse(Origin origin, List<Place> nearby, List<Place> famo
 	}
 
 	// cafe and sight are null when nothing is found near the restaurant; legs join only the stops that exist,
-	// and routeUrl (a Kakao Map walking route through every stop) is null when the restaurant is the only stop
-	public record DateCourse(Place restaurant, Spot cafe, Spot sight, List<Leg> legs, String routeUrl) {
+	// and routeUrl (a Kakao Map walking route through every stop) is null when the restaurant is the only stop;
+	// cafes and sights are the nearest candidates the user can swap to (nearest first, [] when the search failed)
+	public record DateCourse(Place restaurant, Spot cafe, Spot sight, List<Leg> legs, String routeUrl, List<Spot> cafes, List<Spot> sights) {
 	}
 
 	// a course without its restaurant: what GET /api/places/course answers for a restaurant the user picked,
 	// with the same fields and nulls as DateCourse
-	public record Course(Spot cafe, Spot sight, List<Leg> legs, String routeUrl) {
+	public record Course(Spot cafe, Spot sight, List<Leg> legs, String routeUrl, List<Spot> cafes, List<Spot> sights) {
 	}
 }

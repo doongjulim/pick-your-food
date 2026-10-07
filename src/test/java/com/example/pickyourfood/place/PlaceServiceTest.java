@@ -20,6 +20,7 @@ import com.example.pickyourfood.place.PlacesResponse.DateCourse;
 import com.example.pickyourfood.place.PlacesResponse.Leg;
 import com.example.pickyourfood.place.PlacesResponse.Origin;
 import com.example.pickyourfood.place.PlacesResponse.Place;
+import com.example.pickyourfood.place.PlacesResponse.Spot;
 import com.example.pickyourfood.place.TmapClient.Route;
 import java.util.List;
 import java.util.Optional;
@@ -205,6 +206,21 @@ class PlaceServiceTest {
 	}
 
 	@Test
+	void coursesOfferEveryNearbyCandidateNearestFirst() {
+		famousRanked("r1", "r2");
+		cafesNear(37.56, spot("shared", 37.561), spot("second", 37.562));
+		cafesNear(37.57, spot("shared", 37.561), spot("own", 37.572));
+
+		List<DateCourse> courses = service.search("ramen", ORIGIN).dateCourses();
+
+		assertThat(courses.get(0).cafes()).extracting(Spot::id).containsExactly("shared", "second");
+		assertThat(courses.get(1).cafe().id()).isEqualTo("own");
+		// a spot an earlier course uses is still offered
+		assertThat(courses.get(1).cafes()).extracting(Spot::id).containsExactly("shared", "own");
+		assertThat(courses.get(0).sights()).isEmpty();
+	}
+
+	@Test
 	void legsMeasureWalkingDistanceRoundedUpToAMinute() {
 		famousRanked("r1");
 		cafesNear(37.56, spot("cafe", 37.564)); // 445m from the restaurant
@@ -303,6 +319,8 @@ class PlaceServiceTest {
 		assertThat(course.cafe()).isNull();
 		assertThat(course.legs()).extracting(Leg::from).containsExactly("고른 식당");
 		assertThat(course.legs()).extracting(Leg::to).containsExactly("sight");
+		assertThat(course.cafes()).isEmpty();
+		assertThat(course.sights()).extracting(Spot::id).containsExactly("sight");
 	}
 
 	@Test
@@ -313,6 +331,18 @@ class PlaceServiceTest {
 		assertThat(course.sight()).isNull();
 		assertThat(course.legs()).isEmpty();
 		assertThat(course.routeUrl()).isNull();
+	}
+
+	@Test
+	void pickedCourseOffersTheCandidatesWithTheirDistance() {
+		cafesNear(37.55, new KakaoPlace("near", "near", "카페", "주소 near", 37.551, 127.05, 120, "https://place.map.kakao.com/near"),
+				spot("far", 37.556));
+
+		Course course = service.course("p1", "고른 식당", 37.55, 127.05);
+
+		assertThat(course.cafe().distanceMeters()).isEqualTo(120);
+		assertThat(course.cafes()).extracting(Spot::id).containsExactly("near", "far");
+		assertThat(course.sights()).isEmpty();
 	}
 
 	private static final List<double[]> WALK = List.of(

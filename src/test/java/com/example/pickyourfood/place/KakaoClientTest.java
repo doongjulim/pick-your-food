@@ -68,14 +68,14 @@ class KakaoClientTest {
 	}
 
 	@Test
-	void nearbySendsCategorySearchAndReturnsTheNearestThree() {
+	void nearbySendsCategorySearchAndReturnsTheNearestFive() {
 		server.expect(requestTo(containsString("https://dapi.kakao.com/v2/local/search/category.json")))
 				.andExpect(queryParam("category_group_code", "CE7"))
 				.andExpect(queryParam("x", "127.05"))
 				.andExpect(queryParam("y", "37.54"))
 				.andExpect(queryParam("radius", "500"))
 				.andExpect(queryParam("sort", "distance"))
-				.andExpect(queryParam("size", "3"))
+				.andExpect(queryParam("size", "5"))
 				.andRespond(withSuccess("""
 						{"documents":[
 						{"id":"1","place_name":"어니언","category_name":"음식점 > 카페","address_name":"","road_address_name":"서울 성동구 1",

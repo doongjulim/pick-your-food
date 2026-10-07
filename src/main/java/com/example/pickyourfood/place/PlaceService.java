@@ -141,10 +141,9 @@ public class PlaceService {
 		List<CompletableFuture<DateCourse>> courses = new ArrayList<>();
 		for (int i = 0; i < restaurants.size(); i++) {
 			Place restaurant = restaurants.get(i);
-			Spot cafe = pick(cafes.get(i).join(), used);
-			Spot sight = pick(sights.get(i).join(), used);
-			courses.add(courseAsync(stop(restaurant), cafe, sight)
-					.thenApply(found -> new DateCourse(restaurant, found.cafe(), found.sight(), found.legs(), found.routeUrl())));
+			courses.add(courseAsync(stop(restaurant), cafes.get(i).join(), sights.get(i).join(), used)
+					.thenApply(found -> new DateCourse(restaurant, found.cafe(), found.sight(), found.legs(), found.routeUrl(),
+							found.cafes(), found.sights())));
 		}
 		return courses.stream().map(CompletableFuture::join).toList();
 	}
@@ -154,7 +153,7 @@ public class PlaceService {
 		Stop start = new Stop(id, name, lat, lng);
 		CompletableFuture<List<KakaoPlace>> cafes = candidatesAsync(KakaoClient.CAFE, start, CAFE_RADIUS);
 		CompletableFuture<List<KakaoPlace>> sights = candidatesAsync(KakaoClient.SIGHT, start, SIGHT_RADIUS);
-		return courseAsync(start, pick(cafes.join(), new HashSet<>()), pick(sights.join(), new HashSet<>())).join();
+		return courseAsync(start, cafes.join(), sights.join(), new HashSet<>()).join();
 	}
 
 	private static Stop stop(Place place) {
@@ -179,12 +178,24 @@ public class PlaceService {
 				.or(() -> candidates.stream().findFirst())
 				.map(found -> {
 					used.add(found.id());
-					return new Spot(found.id(), found.name(), found.category(), found.address(), found.lat(), found.lng(), found.url());
+					return spot(found);
 				})
 				.orElse(null);
 	}
 
-	private CompletableFuture<Course> courseAsync(Stop start, Spot cafe, Spot sight) {
+	private static Spot spot(KakaoPlace found) {
+		return new Spot(found.id(), found.name(), found.category(), found.address(), found.lat(), found.lng(), found.url(),
+				found.distanceMeters());
+	}
+
+	private static List<Spot> spots(List<KakaoPlace> found) {
+		return found.stream().map(PlaceService::spot).toList();
+	}
+
+	// picks the cafe and sight no earlier course uses (see pick) and offers every candidate for swapping
+	private CompletableFuture<Course> courseAsync(Stop start, List<KakaoPlace> cafes, List<KakaoPlace> sights, Set<String> used) {
+		Spot cafe = pick(cafes, used);
+		Spot sight = pick(sights, used);
 		List<Stop> stops = new ArrayList<>();
 		stops.add(start);
 		if (cafe != null) stops.add(new Stop(cafe.id(), cafe.name(), cafe.lat(), cafe.lng()));
@@ -196,7 +207,8 @@ public class PlaceService {
 						.map(stop -> routeName(stop.name()) + "," + stop.lat() + "," + stop.lng())
 						.collect(Collectors.joining("/"));
 		return CompletableFuture.allOf(legs.toArray(CompletableFuture[]::new))
-				.thenApply(done -> new Course(cafe, sight, legs.stream().map(CompletableFuture::join).toList(), routeUrl));
+				.thenApply(done -> new Course(cafe, sight, legs.stream().map(CompletableFuture::join).toList(), routeUrl,
+						spots(cafes), spots(sights)));
 	}
 
 	private CompletableFuture<Leg> legAsync(Stop from, Stop to) {

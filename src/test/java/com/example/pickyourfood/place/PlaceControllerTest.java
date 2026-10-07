@@ -97,7 +97,7 @@ class PlaceControllerTest {
 		Place restaurant = new Place("r1", "r1", "", 0, 37.56, 127.05, "", null, null, null, List.of(), null);
 		Leg leg = new Leg("r1", "cafe", 512, 8, List.of(new double[] { 37.56, 127.05 }, new double[] { 37.564, 127.051 }));
 		Leg straight = new Leg("cafe", "sight", 300, 5, null);
-		DateCourse course = new DateCourse(restaurant, null, null, List.of(leg, straight), "https://map.kakao.com/link/by/walk/a");
+		DateCourse course = new DateCourse(restaurant, null, null, List.of(leg, straight), "https://map.kakao.com/link/by/walk/a", List.of(), List.of());
 		when(places.search("탄탄멘", here)).thenReturn(new PlacesResponse(here, List.of(), List.of(), List.of(course)));
 
 		mvc.perform(get("/api/places").param("food", "탄탄멘").param("lat", "37.54").param("lng", "127.05"))
@@ -109,15 +109,17 @@ class PlaceControllerTest {
 
 	@Test
 	void pickedCourseNeedsNoLogin() throws Exception {
-		Spot cafe = new Spot("c1", "어니언", "카페", "", 37.554, 127.05, "");
+		Spot cafe = new Spot("c1", "어니언", "카페", "", 37.554, 127.05, "", 120);
 		Leg leg = new Leg("고른 식당", "어니언", 445, 7, null);
 		when(places.course("p1", "고른 식당", 37.55, 127.05))
-				.thenReturn(new Course(cafe, null, List.of(leg), "https://map.kakao.com/link/by/walk/a"));
+				.thenReturn(new Course(cafe, null, List.of(leg), "https://map.kakao.com/link/by/walk/a", List.of(cafe), List.of()));
 
 		mvc.perform(get("/api/places/course").param("id", "p1").param("name", " 고른 식당 ").param("lat", "37.55").param("lng", "127.05"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.cafe.name").value("어니언"))
 				.andExpect(jsonPath("$.sight").value(nullValue()))
+				.andExpect(jsonPath("$.cafes[0].distanceMeters").value(120))
+				.andExpect(jsonPath("$.sights").isEmpty())
 				.andExpect(jsonPath("$.legs[0].walkMinutes").value(7))
 				.andExpect(jsonPath("$.routeUrl").value("https://map.kakao.com/link/by/walk/a"))
 				.andExpect(jsonPath("$.restaurant").doesNotExist());
