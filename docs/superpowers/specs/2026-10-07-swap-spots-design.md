@@ -44,7 +44,7 @@
 - 로그인 불필요. `SecurityConfig`의 `permitAll`에 `/api/places/legs`(`/api/places/course`와 같은 이유).
 - 검사(위반 시 400): 길이 조건, 각 `id`·`name`이 비어 있지 않고(공백 제거 후) 100자 이하이며 제어 문자 없음, `lat` -90~90, `lng` -180~180(NaN 거부). 누락·숫자 아님은 Spring 기본 400. `PlaceController`의 기존 `fits`를 쓴다.
 - 응답 `PlacesResponse.Walk(List<Leg> legs, String routeUrl)`. JSON은 코스 응답의 같은 필드와 똑같은 모양.
-- `PlaceService.legs(List<Stop> stops)`: 기존 `courseAsync`에서 구간·`routeUrl` 만드는 부분을 떼어 두 경로가 함께 쓴다(코스는 그 결과에 카페·볼거리를 붙인다).
+- `PlaceService.walk(List<PlaceService.Stop> stops)`: 기존 `courseAsync`에서 구간·`routeUrl` 만드는 부분을 떼어 두 경로가 함께 쓴다(코스는 그 결과에 카페·볼거리를 붙인다).
 
 ### 경로 캐시 키
 
@@ -96,12 +96,12 @@
 화면: `npm run build && npm run lint` + 헤드리스 Chrome(가로챈 `/api/*`). 확인 항목:
 1. `다른 곳` → 후보 목록(지금 표시) → 다른 카페 선택 → `경로 다시 계산 중…` → 칸·구간·`전체 경로 보기`가 새 장소로.
 2. `/api/places/legs` 500 → 카페는 그대로, 알림.
-8. 바꾸기 요청 중 내 코스를 만들면(또는 그 반대) 나중 것만 반영된다.
 3. 빠르게 두 번 바꾸면 마지막 것만 남는다(첫 응답을 늦게 돌려줘도).
 4. 바꾼 뒤 저장 → 요청 본문에 `cafes`·`sights`·`distanceMeters`가 없고 바꾼 카페가 있다.
 5. 다른 코스 탭으로 옮겨도 바꾼 상태가 남는다.
 6. 저장 결과 화면에는 `다른 곳`이 없다.
 7. 375px에서 후보 목록이 가로로 넘치지 않는다.
+8. 바꾸기 요청 중 내 코스를 만들면(또는 그 반대) 나중 것만 반영된다.
 
 ## 6. 범위 밖
 
