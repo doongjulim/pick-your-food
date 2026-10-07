@@ -34,7 +34,7 @@
 ### 후보
 
 - `KakaoClient.nearby`의 `size`를 5로.
-- `PlacesResponse.Spot`에 `Integer distanceMeters`(카카오가 준 검색 중심, 즉 식당에서의 거리). 응답의 모든 `Spot`에 채운다.
+- `PlacesResponse.Spot`에 `int distanceMeters`(카카오가 준 검색 중심, 즉 식당에서의 거리). 응답의 모든 `Spot`에 채운다.
 - `PlacesResponse.DateCourse`와 `Course`에 `List<Spot> cafes`, `List<Spot> sights`(가까운 순, 최대 5, 검색 실패 시 `[]`). `cafe`·`sight`는 지금처럼 이 중 고른 하나(또는 `null`).
 - 저장 쪽 `SavedResult.Spot`은 바꾸지 않는다(`distanceMeters`는 저장되지 않는다. 저장 결과 화면은 거리를 쓰지 않는다).
 
