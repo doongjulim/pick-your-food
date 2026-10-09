@@ -76,13 +76,14 @@ export default function PlaceTable({ food, nearby, famous, origin, course }: Pro
     setOpen(null)
   }
 
-  // a pin toggles its row; opening one brings the row into view and moves focus there, since the pin is redrawn
+  // a pin toggles its row; either way the pin is redrawn, so focus moves to the row - opening
+  // also brings it into view, closing leaves the page where it was
   function pick(id: string) {
-    if (open === id) return setOpen(null)
-    setOpen(id)
+    const opening = open !== id
+    setOpen(opening ? id : null)
     const row = list.current?.querySelector<HTMLElement>(`[data-place-id="${CSS.escape(id)}"] > button`)
     row?.focus({ preventScroll: true })
-    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    if (opening) row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
 
   function sortBy(key: SortKey) {

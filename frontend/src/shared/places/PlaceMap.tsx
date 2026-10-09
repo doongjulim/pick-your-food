@@ -47,6 +47,13 @@ export default function PlaceMap({ places, origin, open, onPick }: Props) {
   const map = useRef<KakaoMap | null>(null)
   // undefined while loading, null when there is no map to show
   const [maps, setMaps] = useState<KakaoMaps | null>()
+  // read inside the click handler instead of in the pins effect's deps, so a caller passing a
+  // new onPick each render (PlacesSection does, via course={{ pick, ...picking }}) doesn't tear
+  // down and rebuild every pin — that would drop focus from whichever pin the user just focused
+  const onPickRef = useRef(onPick)
+  useEffect(() => {
+    onPickRef.current = onPick
+  }, [onPick])
 
   useEffect(() => {
     let mounted = true
@@ -79,7 +86,7 @@ export default function PlaceMap({ places, origin, open, onPick }: Props) {
       (place) =>
         new maps.CustomOverlay({
           position: new maps.LatLng(place.lat, place.lng),
-          content: pin(place, place.id === open, onPick),
+          content: pin(place, place.id === open, (id) => onPickRef.current(id)),
           yAnchor: 0.5,
           zIndex: place.id === open ? 1 : 0,
           clickable: true,
@@ -87,7 +94,7 @@ export default function PlaceMap({ places, origin, open, onPick }: Props) {
     )
     pins.forEach((overlay) => overlay.setMap(map.current))
     return () => pins.forEach((overlay) => overlay.setMap(null))
-  }, [maps, places, open, onPick])
+  }, [maps, places, open])
 
   if (maps === null) return null
   return (
