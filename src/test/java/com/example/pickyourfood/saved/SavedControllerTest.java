@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +30,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -111,6 +113,10 @@ class SavedControllerTest {
 	private void rejects(String body) throws Exception {
 		mvc.perform(withCsrf(post("/api/saved"), loggedIn(SEOYUN)).contentType(MediaType.APPLICATION_JSON).content(body))
 				.andExpect(status().isBadRequest());
+	}
+
+	private ResultActions change(String id, String body, Cookie... session) throws Exception {
+		return mvc.perform(withCsrf(patch("/api/saved/" + id), session).contentType(MediaType.APPLICATION_JSON).content(body));
 	}
 
 	@Test
@@ -275,5 +281,74 @@ class SavedControllerTest {
 
 		mvc.perform(withCsrf(delete("/api/saved/" + id), loggedIn(SEOYUN))).andExpect(status().isNoContent());
 		mvc.perform(get("/api/saved/" + id)).andExpect(status().isNotFound());
+	}
+
+	@Test
+	void theOwnerRenamesAResult() throws Exception {
+		String id = save(SEOYUN, RESULT);
+
+		change(id, "{\"title\":\"  성수 데이트  \"}", loggedIn(SEOYUN)).andExpect(status().isNoContent());
+
+		mvc.perform(get("/api/saved/" + id))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.shared").value(true))
+				.andExpect(jsonPath("$.result.title").value("성수 데이트"))
+				.andExpect(jsonPath("$.result.best.name").value("탄탄멘"));
+		mvc.perform(get("/api/saved").cookie(loggedIn(SEOYUN)))
+				.andExpect(jsonPath("$[?(@.id == '%s')].title", id).value("성수 데이트"))
+				.andExpect(jsonPath("$[?(@.id == '%s')].shared", id).value(true));
+	}
+
+	@Test
+	void anUnsharedResultLooksDeletedToEveryoneButTheOwner() throws Exception {
+		String id = save(SEOYUN, MENU_ONLY);
+
+		change(id, "{\"shared\":false}", loggedIn(SEOYUN)).andExpect(status().isNoContent());
+
+		mvc.perform(get("/api/saved/" + id)).andExpect(status().isNotFound());
+		mvc.perform(get("/api/saved/" + id).cookie(loggedIn(HARAM))).andExpect(status().isNotFound());
+		mvc.perform(get("/api/saved/" + id).cookie(loggedIn(SEOYUN)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.mine").value(true))
+				.andExpect(jsonPath("$.shared").value(false));
+		mvc.perform(get("/api/saved").cookie(loggedIn(SEOYUN)))
+				.andExpect(jsonPath("$[?(@.id == '%s')].shared", id).value(false));
+
+		change(id, "{\"shared\":true}", loggedIn(SEOYUN)).andExpect(status().isNoContent());
+
+		mvc.perform(get("/api/saved/" + id)).andExpect(status().isOk()).andExpect(jsonPath("$.shared").value(true));
+	}
+
+	@Test
+	void onlyTheOwnerCanChangeAResult() throws Exception {
+		String id = save(SEOYUN, MENU_ONLY);
+
+		mvc.perform(withCsrf(patch("/api/saved/" + id)).contentType(MediaType.APPLICATION_JSON).content("{\"shared\":false}"))
+				.andExpect(status().isUnauthorized());
+		change(id, "{\"title\":\"남의 것\",\"shared\":false}", loggedIn(HARAM)).andExpect(status().isNotFound());
+		change("AAAAAAAAAAAAAAAAAAAAAA", "{\"shared\":false}", loggedIn(SEOYUN)).andExpect(status().isNotFound());
+
+		mvc.perform(get("/api/saved/" + id))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.result.title").value("당신에게 딱 맞는 메뉴"));
+	}
+
+	@Test
+	void changingNeedsTheCsrfHeader() throws Exception {
+		String id = save(SEOYUN, MENU_ONLY);
+
+		mvc.perform(patch("/api/saved/" + id).cookie(loggedIn(SEOYUN)).contentType(MediaType.APPLICATION_JSON).content("{\"shared\":false}"))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void badChangesAreRejected() throws Exception {
+		String id = save(SEOYUN, MENU_ONLY);
+
+		for (String body : new String[] { "{}", "{\"title\":null,\"shared\":null}", "{\"title\":\"   \"}",
+				"{\"title\":\"" + "가".repeat(101) + "\"}", "{\"shared\":\"nope\"}" }) {
+			change(id, body, loggedIn(SEOYUN)).andExpect(status().isBadRequest());
+		}
+		change(id, "{\"title\":\"" + "가".repeat(100) + "\"}", loggedIn(SEOYUN)).andExpect(status().isNoContent());
 	}
 }

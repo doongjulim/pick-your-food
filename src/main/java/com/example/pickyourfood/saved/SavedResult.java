@@ -5,6 +5,11 @@ import java.util.List;
 // what a saved link shows; Google fields (rating, reviews, …) have no component here, so they are dropped on save
 record SavedResult(String title, Food best, List<Food> alternatives, Places places) {
 
+	// the payload keeps the name it was saved with; the title column has the current one
+	SavedResult withTitle(String title) {
+		return new SavedResult(title, best, alternatives, places);
+	}
+
 	record Food(String id, String name, String description) {
 	}
 

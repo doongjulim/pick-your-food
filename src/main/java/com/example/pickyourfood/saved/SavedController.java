@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,12 +51,15 @@ class SavedController {
 		return saved.findByAccount(accountId(auth));
 	}
 
-	// public: anyone with the link sees it; auth is null for visitors
+	// public: anyone with the link sees it, unless its owner turned sharing off; auth is null for visitors
 	@GetMapping("/{id}")
 	View one(@PathVariable String id, Authentication auth) {
 		Stored stored = saved.find(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 		boolean mine = auth != null && auth.getName().equals(String.valueOf(stored.accountId()));
-		return new View(id, stored.createdAt(), mine, json.readValue(stored.payload(), SavedResult.class));
+		// an unshared result answers like a deleted one, so others can't tell it exists
+		if (!stored.shared() && !mine) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		SavedResult result = json.readValue(stored.payload(), SavedResult.class).withTitle(stored.title());
+		return new View(id, stored.createdAt(), mine, stored.shared(), result);
 	}
 
 	// someone else's result answers 404 too, so ids of others' results can't be probed
@@ -63,6 +67,17 @@ class SavedController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void delete(@PathVariable String id, Authentication auth) {
 		if (!saved.delete(id, accountId(auth))) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+	}
+
+	// renames and/or turns the share link on or off; someone else's result answers 404, as in delete
+	@PatchMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void change(@PathVariable String id, @RequestBody Change change, Authentication auth) {
+		String title = change.title() == null ? null : change.title().strip();
+		if ((title == null && change.shared() == null) || (title != null && (title.isEmpty() || title.length() > 100))) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		}
+		if (!saved.update(id, accountId(auth), title, change.shared())) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 	}
 
 	private static boolean valid(SavedResult r) {
@@ -94,6 +109,9 @@ class SavedController {
 	record Created(String id) {
 	}
 
-	record View(String id, Instant createdAt, boolean mine, SavedResult result) {
+	record View(String id, Instant createdAt, boolean mine, boolean shared, SavedResult result) {
+	}
+
+	record Change(String title, Boolean shared) {
 	}
 }
