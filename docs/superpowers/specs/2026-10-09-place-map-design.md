@@ -37,12 +37,12 @@
 - 핀: 식당마다 `CustomOverlay`의 `content`로 `<button type="button" aria-label="{식당 이름}">`.
   - 평소: 회색 점(`size-3 rounded-full bg-zinc-500 ring-2 ring-white`).
   - 펼친 행(`id === open`): 강조색 점(`size-4 bg-accent`) + 오른쪽에 이름 라벨(흰 배경, 작은 글씨, 한 줄, 최대 너비에서 말줄임), 다른 핀보다 위(`zIndex`).
-  - 누르면 `onPick(place.id)`.
+  - 누르면 `onPick(place.id)`. 핀으로 행을 펼치면 포커스가 그 행의 버튼으로 옮겨 간다(핀은 다시 그려지므로 키보드 사용자가 길을 잃지 않게).
 - `open`이 바뀌면 핀 오버레이를 지우고 새 모양으로 다시 올린다(식당 수십 곳이라 충분히 가볍다). 지도 위치는 그대로. 지도 만들기·범위 맞추기는 `places`가 바뀔 때만 한다.
 
 ### `kakaoMap.ts`
 
-- `CustomOverlay` 옵션 타입에 `zIndex?: number`(SDK에 있는 옵션)만 더한다. 나머지(`Map`, `LatLng`, `LatLngBounds`, `ZoomControl`)는 지금 타입 그대로 쓴다.
+- `CustomOverlay` 옵션 타입에 `zIndex?: number`와 `clickable?: boolean`(둘 다 SDK에 있는 옵션)만 더한다. 핀은 `clickable: true`로 올려 누를 때 지도 드래그·클릭으로 새지 않게 한다. 나머지(`Map`, `LatLng`, `LatLngBounds`, `ZoomControl`)는 지금 타입 그대로 쓴다.
 
 ### `shared/places/PlaceTable.tsx`
 
