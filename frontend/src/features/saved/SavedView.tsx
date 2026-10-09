@@ -6,7 +6,8 @@ import DateCourses from '../../shared/places/DateCourses.tsx'
 import PlaceTable from '../../shared/places/PlaceTable.tsx'
 import { deleteSaved, fetchSaved, savedDate } from './api.ts'
 import type { SavedEntry } from './api.ts'
-import ShareButton from './ShareButton.tsx'
+import SavedTitle from './SavedTitle.tsx'
+import ShareControls from './ShareControls.tsx'
 
 type State = { status: 'loading' | 'missing' | 'error' } | { status: 'done'; entry: SavedEntry }
 
@@ -43,6 +44,11 @@ export default function SavedView({ id, justSaved, onHome, onDeleted }: Props) {
     if (!confirm('이 결과를 지울까요? 링크도 더 이상 열리지 않아요.')) return
     setDeleting('busy')
     deleteSaved(id).then(onDeleted, () => setDeleting('failed'))
+  }
+
+  // applied only after the server took the change
+  function update(change: (entry: SavedEntry) => SavedEntry) {
+    setState((prev) => (prev.status === 'done' ? { status: 'done', entry: change(prev.entry) } : prev))
   }
 
   if (state.status === 'loading') return <ViewSkeleton />
@@ -87,7 +93,12 @@ export default function SavedView({ id, justSaved, onHome, onDeleted }: Props) {
           <p className="text-sm font-medium text-accent">
             저장한 결과 · <span className="font-mono">{savedDate(entry.createdAt)}</span>
           </p>
-          <p className="mt-2 text-sm text-zinc-500">{entry.result.title}</p>
+          <SavedTitle
+            id={entry.id}
+            title={entry.result.title}
+            mine={entry.mine}
+            onRenamed={(title) => update((e) => ({ ...e, result: { ...e.result, title } }))}
+          />
           <h1 className="mt-4 text-5xl font-semibold leading-none tracking-tighter md:text-7xl">{best.name}</h1>
           <p className="mt-6 max-w-[45ch] text-base leading-relaxed text-zinc-600">{best.description}</p>
           {justSaved && (
@@ -96,7 +107,12 @@ export default function SavedView({ id, justSaved, onHome, onDeleted }: Props) {
             </p>
           )}
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <ShareButton id={entry.id} />
+            <ShareControls
+              id={entry.id}
+              mine={entry.mine}
+              shared={entry.shared}
+              onChange={(shared) => update((e) => ({ ...e, shared }))}
+            />
             <button type="button" onClick={onHome} className={button}>
               <House size={16} /> 처음으로
             </button>

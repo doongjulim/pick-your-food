@@ -1,4 +1,4 @@
-import { House, SignIn, Trash } from '@phosphor-icons/react'
+import { House, LockSimple, SignIn, Trash } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { deleteSaved, fetchMySaved, savedDate } from './api.ts'
@@ -90,8 +90,15 @@ export default function SavedList({ onOpen, onHome }: Props) {
                 className="min-w-0 flex-1 py-5 text-left transition hover:bg-zinc-100/60"
               >
                 <span className="block truncate text-lg font-semibold tracking-tight">{item.foodName}</span>
-                <span className="mt-1 block truncate text-sm text-zinc-500">
-                  {[item.title, item.originName && `${item.originName} 기준`].filter(Boolean).join(' · ')}
+                <span className="mt-1 flex min-w-0 items-center gap-2 text-sm text-zinc-500">
+                  {!item.shared && (
+                    <span className="flex shrink-0 items-center gap-1 font-medium text-zinc-700">
+                      <LockSimple size={14} /> 비공개
+                    </span>
+                  )}
+                  <span className="truncate">
+                    {[item.title, item.originName && `${item.originName} 기준`].filter(Boolean).join(' · ')}
+                  </span>
                 </span>
               </button>
               <span className="shrink-0 font-mono text-sm text-zinc-500">{savedDate(item.createdAt)}</span>

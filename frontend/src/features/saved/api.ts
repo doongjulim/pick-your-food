@@ -14,6 +14,7 @@ export type SavedEntry = {
   id: string
   createdAt: string
   mine: boolean
+  shared: boolean
   result: Saved
 }
 
@@ -23,6 +24,7 @@ export type SavedSummary = {
   foodName: string
   originName: string | null
   createdAt: string
+  shared: boolean
 }
 
 type KakaoPlace = Pick<Place, 'id' | 'name' | 'address' | 'distanceMeters' | 'lat' | 'lng' | 'kakaoUrl'>
@@ -93,6 +95,15 @@ export async function fetchMySaved(): Promise<SavedSummary[] | null> {
 
 export function deleteSaved(id: string): Promise<void> {
   return request(`/api/saved/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+// the owner renames the result or turns its share link off and on
+export function updateSaved(id: string, change: { title?: string; shared?: boolean }): Promise<void> {
+  return request(`/api/saved/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(change),
+  })
 }
 
 // "9월 26일"
