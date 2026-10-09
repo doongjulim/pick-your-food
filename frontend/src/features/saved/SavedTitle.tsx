@@ -32,6 +32,11 @@ export default function SavedTitle({ id, title, mine, onRenamed }: Props) {
     setEditing(true)
   }
 
+  // a rename in flight can't be called off, so the form stays until it ends
+  function close() {
+    if (status !== 'busy') setEditing(false)
+  }
+
   function submit(event: FormEvent) {
     event.preventDefault()
     const next = draft.trim()
@@ -69,7 +74,7 @@ export default function SavedTitle({ id, title, mine, onRenamed }: Props) {
   return (
     <form
       onSubmit={submit}
-      onKeyDown={(event) => event.key === 'Escape' && setEditing(false)}
+      onKeyDown={(event) => event.key === 'Escape' && close()}
       className="mt-2 grid max-w-md gap-2"
     >
       <label htmlFor="saved-title" className="text-sm text-zinc-500">
@@ -94,7 +99,7 @@ export default function SavedTitle({ id, title, mine, onRenamed }: Props) {
         </button>
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={close}
           className="rounded-full border border-zinc-300 px-5 py-3 text-sm font-medium transition hover:border-zinc-900 active:scale-[0.98]"
         >
           취소
