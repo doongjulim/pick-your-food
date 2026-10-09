@@ -1,9 +1,10 @@
 import { ArrowDown, ArrowUp, Path } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Place } from './types.ts'
 import { distance, summary } from './format.ts'
 import MapLink from './MapLink.tsx'
+import PlaceMap from './PlaceMap.tsx'
 
 type SortKey = 'distance' | 'price' | 'rating' | 'reviews'
 type Sort = { key: SortKey; asc: boolean }
@@ -56,19 +57,32 @@ type Props = {
   food: string
   nearby: Place[]
   famous: Place[]
+  origin: { lat: number; lng: number }
   course?: CoursePicker
 }
 
-export default function PlaceTable({ food, nearby, famous, course }: Props) {
+export default function PlaceTable({ food, nearby, famous, origin, course }: Props) {
   const [tab, setTab] = useState<Tab>(TABS[0])
   const [sort, setSort] = useState<Sort>(TABS[0].sort)
   const [open, setOpen] = useState<string | null>(null)
-  const places = sortPlaces(tab.key === 'nearby' ? nearby : famous, sort)
+  // the map gets the tab's own array: the sorted copy is new every render and would refit the map each time
+  const shown = tab.key === 'nearby' ? nearby : famous
+  const places = sortPlaces(shown, sort)
+  const list = useRef<HTMLUListElement>(null)
 
   function switchTab(next: Tab) {
     setTab(next)
     setSort(next.sort)
     setOpen(null)
+  }
+
+  // a pin toggles its row; opening one brings the row into view and moves focus there, since the pin is redrawn
+  function pick(id: string) {
+    if (open === id) return setOpen(null)
+    setOpen(id)
+    const row = list.current?.querySelector<HTMLElement>(`[data-place-id="${CSS.escape(id)}"] > button`)
+    row?.focus({ preventScroll: true })
+    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
 
   function sortBy(key: SortKey) {
@@ -100,8 +114,9 @@ export default function PlaceTable({ food, nearby, famous, course }: Props) {
           {tab.key === 'nearby' ? '근교 탭을 보거나 다른 동네로 찾아보세요.' : '다른 동네로 찾아보세요.'}
         </p>
       ) : (
-        <div className="mt-6">
-          <div className={`hidden border-b border-zinc-200 pb-3 text-sm text-zinc-500 md:grid ${GRID}`}>
+        <div>
+          <PlaceMap places={shown} origin={origin} open={open} onPick={pick} />
+          <div className={`mt-6 hidden border-b border-zinc-200 pb-3 text-sm text-zinc-500 md:grid ${GRID}`}>
             {COLUMNS.map((column, index) => (
               <button
                 key={column.key}
@@ -116,9 +131,9 @@ export default function PlaceTable({ food, nearby, famous, course }: Props) {
               </button>
             ))}
           </div>
-          <ul className="divide-y divide-zinc-200 border-b border-zinc-200">
+          <ul ref={list} className="mt-6 divide-y divide-zinc-200 border-b border-zinc-200 md:mt-0">
             {places.map((place) => (
-              <li key={place.id}>
+              <li key={place.id} data-place-id={place.id}>
                 <PlaceRow
                   place={place}
                   open={open === place.id}

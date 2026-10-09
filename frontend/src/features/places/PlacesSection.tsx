@@ -220,6 +220,7 @@ export default function PlacesSection({ food, onLoaded }: Props) {
                 food={food}
                 nearby={state.data.nearby}
                 famous={state.data.famous}
+                origin={state.data.origin}
                 course={{ pick, ...picking }}
               />
             </div>

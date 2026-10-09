@@ -132,7 +132,7 @@ export default function SavedView({ id, justSaved, onHome, onDeleted }: Props) {
             <MapPin size={16} className="text-accent" /> {places.origin.name} 기준
           </p>
           <div className="mt-6">
-            <PlaceTable food={best.name} nearby={places.nearby} famous={places.famous} />
+            <PlaceTable food={best.name} nearby={places.nearby} famous={places.famous} origin={places.origin} />
           </div>
           {places.dateCourses.length > 0 && (
             <div className="mt-16">

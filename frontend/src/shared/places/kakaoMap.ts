@@ -1,6 +1,6 @@
 import { request } from '../api.ts'
 
-// just the parts of the Kakao Maps SDK the course map uses
+// just the parts of the Kakao Maps SDK the course and place maps use
 type LatLng = object
 type Bounds = { extend: (point: LatLng) => void }
 type Layer = { setMap: (map: KakaoMap | null) => void }
@@ -16,7 +16,7 @@ export type KakaoMaps = {
   LatLng: new (lat: number, lng: number) => LatLng
   LatLngBounds: new () => Bounds
   Polyline: new (options: { path: LatLng[]; strokeWeight: number; strokeColor: string; strokeOpacity: number; strokeStyle: string }) => Layer
-  CustomOverlay: new (options: { position: LatLng; content: HTMLElement; yAnchor: number }) => Layer
+  CustomOverlay: new (options: { position: LatLng; content: HTMLElement; yAnchor: number; zIndex?: number; clickable?: boolean }) => Layer
   ZoomControl: new () => object
   ControlPosition: { RIGHT: number }
 }
