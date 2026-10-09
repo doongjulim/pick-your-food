@@ -134,4 +134,27 @@ class SharePageControllerTest {
 
 		assertThat(page("wrong-shape-0000000000")).contains("<meta property=\"og:title\" content=\"오늘 뭐 먹지\" />");
 	}
+
+	@Test
+	void unsharedResultGetsTheDefaultCard() throws Exception {
+		String id = share(menu("오늘의 랜덤 메뉴", "고소하고 매콤한 국물"));
+		saved.update(id, OWNER, null, false);
+
+		assertThat(page(id)).contains(
+				"<title>오늘 뭐 먹지</title>",
+				"<meta property=\"og:title\" content=\"오늘 뭐 먹지\" />",
+				"<meta property=\"og:description\" content=\"오늘 먹을 메뉴를 골라 드려요\" />")
+				.doesNotContain("탄탄멘", "고소하고 매콤한 국물");
+	}
+
+	@Test
+	void renamedResultShowsTheNewName() throws Exception {
+		String id = share(menu("오늘의 랜덤 메뉴", "고소하고 매콤한 국물"));
+		saved.update(id, OWNER, "성수 <데이트>", null);
+
+		assertThat(page(id)).contains(
+				"<title>탄탄멘 · 성수 &lt;데이트&gt;</title>",
+				"<meta property=\"og:title\" content=\"탄탄멘 · 성수 &lt;데이트&gt;\" />")
+				.doesNotContain("오늘의 랜덤 메뉴", "<데이트>");
+	}
 }

@@ -36,7 +36,9 @@ class SharePageController {
 	@GetMapping(value = "/s/{id}", produces = "text/html;charset=UTF-8")
 	@ResponseBody
 	String page(@PathVariable String id) throws IOException {
-		Card card = saved.find(id).map(stored -> card(stored.payload())).orElse(Card.DEFAULT);
+		// an unshared result gets the default card, the same as a deleted one
+		Card card = saved.find(id).filter(SavedRepository.Stored::shared)
+				.map(stored -> card(stored.payload(), stored.title())).orElse(Card.DEFAULT);
 		String tags = String.join("\n    ",
 				meta("property", "og:type", "website"),
 				meta("property", "og:site_name", SITE),
@@ -50,8 +52,9 @@ class SharePageController {
 				.replaceFirst("<head>", Matcher.quoteReplacement("<head>\n    " + tags));
 	}
 
-	// a payload that no longer reads as a SavedResult still opens the app, with the default card
-	private Card card(String payload) {
+	// a payload that no longer reads as a SavedResult still opens the app, with the default card;
+	// title is the column's, which renaming changes
+	private Card card(String payload, String title) {
 		SavedResult result;
 		try {
 			result = json.readValue(payload, SavedResult.class);
@@ -59,13 +62,13 @@ class SharePageController {
 		catch (RuntimeException e) {
 			return Card.DEFAULT;
 		}
-		if (result == null || result.best() == null || result.best().name() == null || result.title() == null) return Card.DEFAULT;
+		if (result == null || result.best() == null || result.best().name() == null) return Card.DEFAULT;
 		List<String> parts = new ArrayList<>();
 		if (result.best().description() != null && !result.best().description().isBlank()) parts.add(result.best().description());
 		if (result.places() != null && result.places().origin() != null && result.places().origin().name() != null) parts.add(result.places().origin().name() + " 근처 맛집과 데이트 코스");
 		String description = parts.isEmpty() ? DEFAULT_DESCRIPTION : String.join(" · ", parts);
 		if (description.length() > MAX_DESCRIPTION) description = description.substring(0, MAX_DESCRIPTION) + "…";
-		return new Card(result.best().name() + " · " + result.title(), description);
+		return new Card(result.best().name() + " · " + title, description);
 	}
 
 	private String index() throws IOException {
