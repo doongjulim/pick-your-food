@@ -70,7 +70,7 @@ class PostgresMigrationTest {
 	@Test
 	void everyMigrationRunsOnPostgres() {
 		assertThat(jdbc.sql("select version from flyway_schema_history where success order by installed_rank")
-				.query(String.class).list()).containsExactly("1", "2", "3");
+				.query(String.class).list()).containsExactly("1", "2", "3", "4");
 	}
 
 	@Test
