@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, Path } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
-import type { Place } from './types.ts'
+import type { Place, Places } from './types.ts'
 import { distance, summary } from './format.ts'
 import MapLink from './MapLink.tsx'
 import PlaceMap from './PlaceMap.tsx'
@@ -57,8 +57,20 @@ type Props = {
   food: string
   nearby: Place[]
   famous: Place[]
-  origin: { lat: number; lng: number }
+  origin: Places['origin']
   course?: CoursePicker
+}
+
+const TRANSIT_BASE = 'https://map.kakao.com/link/by/traffic/'
+
+// Kakao Map reads `name,lat,lng`, so commas and slashes in a name would split it
+function point({ name, lat, lng }: { name: string; lat: number; lng: number }): string {
+  return `${encodeURIComponent(name.replace(/[,/]/g, ' '))},${lat},${lng}`
+}
+
+// public-transit directions from where the search started to the restaurant
+function transitUrl(origin: Places['origin'], place: Place): string {
+  return `${TRANSIT_BASE}${point(origin)}/${point(place)}`
 }
 
 export default function PlaceTable({ food, nearby, famous, origin, course }: Props) {
@@ -139,6 +151,7 @@ export default function PlaceTable({ food, nearby, famous, origin, course }: Pro
                   place={place}
                   open={open === place.id}
                   onToggle={() => setOpen(open === place.id ? null : place.id)}
+                  transit={transitUrl(origin, place)}
                   course={course}
                 />
               </li>
@@ -154,10 +167,11 @@ type PlaceRowProps = {
   place: Place
   open: boolean
   onToggle: () => void
+  transit: string
   course?: CoursePicker
 }
 
-function PlaceRow({ place, open, onToggle, course }: PlaceRowProps) {
+function PlaceRow({ place, open, onToggle, transit, course }: PlaceRowProps) {
   return (
     <>
       <button
@@ -188,7 +202,7 @@ function PlaceRow({ place, open, onToggle, course }: PlaceRowProps) {
             transition={spring}
             className="pb-6"
           >
-            <Reviews place={place} course={course} />
+            <Reviews place={place} transit={transit} course={course} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -196,7 +210,7 @@ function PlaceRow({ place, open, onToggle, course }: PlaceRowProps) {
   )
 }
 
-function Reviews({ place, course }: { place: Place; course?: CoursePicker }) {
+function Reviews({ place, transit, course }: { place: Place; transit: string; course?: CoursePicker }) {
   return (
     <div className="grid gap-6 rounded-2xl bg-white p-5 md:grid-cols-[1fr_auto] md:gap-10">
       {place.reviews.length === 0 ? (
@@ -218,6 +232,7 @@ function Reviews({ place, course }: { place: Place; course?: CoursePicker }) {
       <div className="flex flex-wrap gap-2 md:flex-col">
         <MapLink href={place.kakaoUrl} label="카카오맵" />
         {place.googleUrl && <MapLink href={place.googleUrl} label="Google 지도" />}
+        <MapLink href={transit} label="대중교통 길찾기" />
         {course && (
           <button
             type="button"
