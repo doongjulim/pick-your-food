@@ -49,6 +49,8 @@ public class PlaceService {
 	static final int WALK_METERS_PER_MINUTE = 67;
 	static final String ROUTE_BASE = "https://map.kakao.com/link/by/walk/";
 	static final Duration CACHE_TTL = Duration.ofHours(24);
+	// walking routes rarely change, and the database keeps them across restarts
+	static final Duration ROUTE_TTL = Duration.ofDays(30);
 	// per leg, so three saved courses stay far under the saved result's size limit
 	static final int MAX_PATH_POINTS = 200;
 
