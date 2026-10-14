@@ -17,7 +17,11 @@ public record Food(
 	public enum Mood { EXCITED, NORMAL, DOWN, STRESSED }
 
 	// ANY is only an answer ("no preference"); no food is tagged with it
-	public enum Category { KOREAN, CHINESE, JAPANESE, WESTERN, SNACK, ANY }
+	public enum Category {
+		KOREAN, CHINESE, JAPANESE, WESTERN, SNACK,
+		SOUTHEAST_ASIAN, MEXICAN, INDIAN_MIDDLE_EASTERN, MEAT, FAST_FOOD, BRUNCH,
+		ANY
+	}
 
 	public enum Hunger { LIGHT, MODERATE, STARVING }
 
