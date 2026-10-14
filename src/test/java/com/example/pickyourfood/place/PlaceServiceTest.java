@@ -2,11 +2,13 @@ package com.example.pickyourfood.place;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -24,10 +26,14 @@ import com.example.pickyourfood.place.PlacesResponse.Place;
 import com.example.pickyourfood.place.PlacesResponse.Spot;
 import com.example.pickyourfood.place.PlacesResponse.Walk;
 import com.example.pickyourfood.place.TmapClient.Route;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,7 +46,29 @@ class PlaceServiceTest {
 	private final GooglePlacesClient google = mock(GooglePlacesClient.class);
 	// a mock answers Optional.empty(), so tests that don't stub it get straight-line legs
 	private final TmapClient tmap = mock(TmapClient.class);
-	private final PlaceService service = new PlaceService(kakao, google, tmap);
+	private final MemoryRoutes routes = new MemoryRoutes();
+	private final PlaceService service = new PlaceService(kakao, google, tmap, routes);
+
+	// stands in for the walking_route table; searches look up legs on several threads
+	static class MemoryRoutes extends RouteRepository {
+		final Map<String, Route> saved = new ConcurrentHashMap<>();
+		volatile Instant since;
+
+		MemoryRoutes() {
+			super(null, null);
+		}
+
+		@Override
+		Optional<Route> find(String key, Instant since) {
+			this.since = since;
+			return Optional.ofNullable(saved.get(key));
+		}
+
+		@Override
+		void save(String key, Route route) {
+			saved.put(key, route);
+		}
+	}
 
 	private static KakaoPlace place(String id, double lat) {
 		return new KakaoPlace(id, id, "중국요리", "주소 " + id, lat, 127.05, 100, "https://place.map.kakao.com/" + id);
@@ -374,6 +402,7 @@ class PlaceServiceTest {
 
 		assertThat(course.legs()).containsExactly(new Leg("r1", "cafe", 445, 7, null));
 		verify(tmap, times(2)).route(anyDouble(), anyDouble(), anyDouble(), anyDouble());
+		assertThat(routes.saved).isEmpty();
 	}
 
 	@Test
@@ -387,6 +416,67 @@ class PlaceServiceTest {
 
 		assertThat(leg.meters()).isEqualTo(512);
 		verify(tmap, times(1)).route(anyDouble(), anyDouble(), anyDouble(), anyDouble());
+	}
+
+	@Test
+	void savedRouteIsUsedWithoutCallingTmap() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		routes.saved.put("r1@37.56,127.05>cafe@37.564,127.05", new Route(512, 421, WALK));
+
+		Leg leg = service.search("ramen", ORIGIN).dateCourses().get(0).legs().get(0);
+
+		assertThat(leg.meters()).isEqualTo(512);
+		assertThat(leg.path()).containsExactlyElementsOf(WALK);
+		verify(tmap, never()).route(anyDouble(), anyDouble(), anyDouble(), anyDouble());
+	}
+
+	@Test
+	void routesAreReadBackForThirtyDays() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+
+		Instant before = Instant.now();
+		service.search("ramen", ORIGIN);
+
+		assertThat(routes.since).isBetween(before.minus(PlaceService.ROUTE_TTL), Instant.now().minus(PlaceService.ROUTE_TTL));
+	}
+
+	@Test
+	void tmapRouteIsSavedUnderBothEndsAndTheirCoordinates() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		when(tmap.route(37.56, 127.05, 37.564, 127.05)).thenReturn(Optional.of(new Route(512, 421, WALK)));
+
+		service.search("ramen", ORIGIN);
+
+		assertThat(routes.saved).containsOnlyKeys("r1@37.56,127.05>cafe@37.564,127.05");
+	}
+
+	@Test
+	void noRouteIsSavedWithoutATmapKey() {
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+
+		service.search("ramen", ORIGIN);
+
+		assertThat(routes.saved).isEmpty();
+	}
+
+	@Test
+	void databaseFailureStillReturnsTheTmapRoute() {
+		RouteRepository broken = mock(RouteRepository.class);
+		when(broken.find(anyString(), any())).thenThrow(new DataAccessResourceFailureException("database down"));
+		doThrow(new DataAccessResourceFailureException("database down")).when(broken).save(anyString(), any());
+		PlaceService withBrokenDatabase = new PlaceService(kakao, google, tmap, broken);
+		famousRanked("r1");
+		cafesNear(37.56, spot("cafe", 37.564));
+		when(tmap.route(37.56, 127.05, 37.564, 127.05)).thenReturn(Optional.of(new Route(512, 421, WALK)));
+
+		Leg leg = withBrokenDatabase.search("ramen", ORIGIN).dateCourses().get(0).legs().get(0);
+
+		assertThat(leg.meters()).isEqualTo(512);
+		verify(broken).save(eq("r1@37.56,127.05>cafe@37.564,127.05"), any());
 	}
 
 	@Test

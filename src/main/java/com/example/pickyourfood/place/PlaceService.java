@@ -67,18 +67,18 @@ public class PlaceService {
 	// ponytail: unbounded map, entries only expire when read again; swap for Caffeine if memory grows
 	private final Map<String, Cached> cache = new ConcurrentHashMap<>();
 	// successful routes only, so a TMAP outage is retried on the next search
-	// ponytail: client-chosen start stops can add entries too; unbounded until read again, swap for Caffeine if memory grows
-	private final Map<String, CachedRoute> routes = new ConcurrentHashMap<>();
+	private final RouteRepository routes;
 	private final ExecutorService pool = Executors.newFixedThreadPool(10, task -> {
 		Thread thread = new Thread(task, "place-lookups");
 		thread.setDaemon(true);
 		return thread;
 	});
 
-	PlaceService(KakaoClient kakao, GooglePlacesClient google, TmapClient tmap) {
+	PlaceService(KakaoClient kakao, GooglePlacesClient google, TmapClient tmap, RouteRepository routes) {
 		this.kakao = kakao;
 		this.google = google;
 		this.tmap = tmap;
+		this.routes = routes;
 	}
 
 	public Origin locate(String near) {
@@ -236,16 +236,34 @@ public class PlaceService {
 	private Optional<Route> route(Stop from, Stop to) {
 		// both ends with their coordinates, so client-chosen stops can't poison the entry a real course reads
 		String key = from.id() + "@" + from.lat() + "," + from.lng() + ">" + to.id() + "@" + to.lat() + "," + to.lng();
-		CachedRoute cached = routes.get(key);
-		if (cached != null && cached.at().plus(CACHE_TTL).isAfter(Instant.now())) return Optional.of(cached.route());
+		Optional<Route> saved = savedRoute(key);
+		if (saved.isPresent()) return saved;
 		try {
 			Optional<Route> route = tmap.route(from.lat(), from.lng(), to.lat(), to.lng())
 					.map(found -> new Route(found.meters(), found.seconds(), thin(found.path())));
-			route.ifPresent(found -> routes.put(key, new CachedRoute(found, Instant.now())));
+			route.ifPresent(found -> saveRoute(key, found));
 			return route;
 		} catch (RuntimeException e) {
 			log.warn("TMAP route failed from {} to {}: {}", from.name(), to.name(), e.getMessage());
 			return Optional.empty();
+		}
+	}
+
+	// a database failure only costs a TMAP call, never the search
+	private Optional<Route> savedRoute(String key) {
+		try {
+			return routes.find(key, Instant.now().minus(ROUTE_TTL));
+		} catch (RuntimeException e) {
+			log.warn("Route cache read failed: {}", e.getMessage());
+			return Optional.empty();
+		}
+	}
+
+	private void saveRoute(String key, Route route) {
+		try {
+			routes.save(key, route);
+		} catch (RuntimeException e) {
+			log.warn("Route cache write failed: {}", e.getMessage());
 		}
 	}
 
@@ -281,8 +299,5 @@ public class PlaceService {
 	}
 
 	private record Cached(Optional<GoogleInfo> info, Instant at) {
-	}
-
-	private record CachedRoute(Route route, Instant at) {
 	}
 }
