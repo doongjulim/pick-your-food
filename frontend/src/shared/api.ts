@@ -2,6 +2,8 @@ export type Food = {
   id: string
   name: string
   description: string
+  // missing on saved results, which keep only the name and description
+  category?: string
 }
 
 export class HttpError extends Error {

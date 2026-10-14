@@ -2,6 +2,7 @@ import { ArrowCounterClockwise, House } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import type { Food } from './api.ts'
+import { categoryLabel } from './categories.ts'
 
 type Props = {
   title: string
@@ -81,6 +82,7 @@ export default function ResultView({ title, status, best, alternatives, roll, ag
                 transition={{ ...spring, delay: 0.4 + index * 0.15 }}
                 className="py-5"
               >
+                <CategoryTag category={food.category} className="mb-2" />
                 <p className="text-xl font-semibold tracking-tight">{food.name}</p>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-500">{food.description}</p>
               </motion.li>
@@ -97,12 +99,19 @@ function BestFood({ food, roll }: { food: Food; roll: boolean }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
+      <CategoryTag category={food.category} className="mt-4" />
       <h1 className="mt-4 text-5xl font-semibold leading-none tracking-tighter md:text-7xl">{shown}</h1>
       <p className="mt-6 max-w-[45ch] text-base leading-relaxed text-zinc-600">
         {shown === food.name ? food.description : ' '}
       </p>
     </motion.div>
   )
+}
+
+function CategoryTag({ category, className }: { category: string | undefined; className: string }) {
+  const label = categoryLabel(category)
+  if (!label) return null
+  return <span className={`inline-block rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent ${className}`}>{label}</span>
 }
 
 // cycles through ROLL_NAMES for about a second, then settles on the final name

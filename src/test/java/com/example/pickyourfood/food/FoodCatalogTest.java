@@ -26,13 +26,11 @@ class FoodCatalogTest {
 				.forEach(category -> assertThat(counts.getOrDefault(category, 0L)).as(category.name()).isGreaterThanOrEqualTo(3));
 	}
 
-	// a category the questionnaire offers but the backend doesn't know fails the recommendation with a 400
+	// a category the frontend offers but the backend doesn't know fails the recommendation with a 400
 	@Test
-	void questionnaireOffersEveryCategory() throws IOException {
-		String questions = Files.readString(Path.of("frontend/src/features/recommendation/questions.ts"));
-		String block = questions.substring(questions.indexOf("key: 'category'"));
-		block = block.substring(0, block.indexOf("key:", 1));
-		List<String> offered = Pattern.compile("value: '(\\w+)'").matcher(block).results().map(match -> match.group(1)).toList();
+	void frontendOffersEveryCategory() throws IOException {
+		String categories = Files.readString(Path.of("frontend/src/shared/categories.ts"));
+		List<String> offered = Pattern.compile("value: '(\\w+)'").matcher(categories).results().map(match -> match.group(1)).toList();
 		assertThat(offered).containsExactlyInAnyOrderElementsOf(Arrays.stream(Category.values()).map(Enum::name).toList());
 	}
 

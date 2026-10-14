@@ -1,3 +1,5 @@
+import { CATEGORIES } from '../../shared/categories.ts'
+
 export type Answers = {
   situation: string
   mood: string
@@ -36,20 +38,7 @@ export const QUESTIONS: Question[] = [
   {
     key: 'category',
     title: '어떤 종류가 당기나요?',
-    options: [
-      { value: 'KOREAN', label: '한식' },
-      { value: 'CHINESE', label: '중식' },
-      { value: 'JAPANESE', label: '일식' },
-      { value: 'WESTERN', label: '양식' },
-      { value: 'SNACK', label: '분식' },
-      { value: 'SOUTHEAST_ASIAN', label: '동남아' },
-      { value: 'MEXICAN', label: '멕시칸' },
-      { value: 'INDIAN_MIDDLE_EASTERN', label: '인도·중동' },
-      { value: 'MEAT', label: '고기·구이' },
-      { value: 'FAST_FOOD', label: '패스트푸드·치킨' },
-      { value: 'BRUNCH', label: '브런치' },
-      { value: 'ANY', label: '상관없음' },
-    ],
+    options: CATEGORIES,
   },
   {
     key: 'hunger',

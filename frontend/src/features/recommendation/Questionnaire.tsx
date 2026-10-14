@@ -69,17 +69,19 @@ type QuestionStepProps = {
 function QuestionStep({ question, selected, onChoose }: QuestionStepProps) {
   // false while this screen animates out: a second tap here must not answer the next question
   const isPresent = useIsPresent()
+  // a long list (the categories) gets smaller buttons so it fits a phone screen without scrolling
+  const many = question.options.length > 6
 
   return (
     <>
       <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">{question.title}</h2>
-      <div className="mt-8 grid grid-cols-2 gap-3">
+      <div className={`mt-8 grid grid-cols-2 gap-3 ${many ? 'md:grid-cols-3' : ''}`}>
         {question.options.map((option) => (
           <button
             key={option.value}
             type="button"
             onClick={() => isPresent && onChoose(option.value)}
-            className={`rounded-2xl border p-5 text-left text-lg font-medium transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-accent active:scale-[0.98] ${
+            className={`rounded-2xl border text-left font-medium ${many ? 'px-4 py-3 text-base' : 'p-5 text-lg'} transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-accent active:scale-[0.98] ${
               selected === option.value ? 'border-accent bg-accent-soft' : 'border-zinc-200 bg-white'
             }`}
           >
