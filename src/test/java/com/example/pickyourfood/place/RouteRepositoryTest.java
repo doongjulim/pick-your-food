@@ -3,11 +3,13 @@ package com.example.pickyourfood.place;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.pickyourfood.place.TmapClient.Route;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,9 @@ class RouteRepositoryTest {
 
 	@Autowired
 	JdbcClient jdbc;
+
+	@Autowired
+	DataSource dataSource;
 
 	@BeforeEach
 	void empty() {
@@ -49,6 +54,13 @@ class RouteRepositoryTest {
 		assertThat(route.meters()).isEqualTo(512);
 		assertThat(route.seconds()).isEqualTo(421);
 		assertThat(route.path()).containsExactlyElementsOf(PATH);
+	}
+
+	@Test
+	void unreachableDatabaseFailsWithinFiveSeconds() {
+		HikariDataSource hikari = (HikariDataSource) dataSource;
+
+		assertThat(hikari.getConnectionTimeout()).isEqualTo(5000);
 	}
 
 	@Test
