@@ -38,6 +38,7 @@ export const QUESTIONS: Question[] = [
   {
     key: 'category',
     title: '어떤 종류가 당기나요?',
+    // must stay CATEGORIES: FoodCatalogTest checks that list against the backend
     options: CATEGORIES,
   },
   {

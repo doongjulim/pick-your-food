@@ -29,6 +29,7 @@ class RecommendationControllerTest {
 				{"situation":"ALONE","mood":"DOWN","category":"ANY","hunger":"MODERATE","taste":"SPICY"}""")
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.best.name").isString())
+				.andExpect(jsonPath("$.best.category").isString())
 				.andExpect(jsonPath("$.alternatives.length()").value(2));
 	}
 

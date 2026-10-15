@@ -21,6 +21,7 @@ class RandomFoodControllerTest {
 	void randomReturnsAFood() throws Exception {
 		mvc.perform(get("/api/foods/random"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.name").isString());
+				.andExpect(jsonPath("$.name").isString())
+				.andExpect(jsonPath("$.category").isString());
 	}
 }

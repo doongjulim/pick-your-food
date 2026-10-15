@@ -69,7 +69,7 @@ type QuestionStepProps = {
 function QuestionStep({ question, selected, onChoose }: QuestionStepProps) {
   // false while this screen animates out: a second tap here must not answer the next question
   const isPresent = useIsPresent()
-  // a long list (the categories) gets smaller buttons so it fits a phone screen without scrolling
+  // a long list (the categories) gets smaller buttons, and 3 columns on wider screens, so it fits most phones without scrolling
   const many = question.options.length > 6
 
   return (
