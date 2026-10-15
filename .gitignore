@@ -38,3 +38,12 @@ out/
 
 ### H2 file database ###
 data/
+
+### Claude Code (personal) ###
+.claude/settings.local.json
+.claude/.headroom_*
+
+### Local AI tool state ###
+.serena/
+.superpowers/
+graphify-out/
