@@ -6,7 +6,8 @@ services:
     plan: free
     region: singapore
     branch: main
-    autoDeploy: true
+    # deploy a main commit only after the GitHub Actions CI passes
+    autoDeployTrigger: checksPass
     healthCheckPath: /api/foods/random
     envVars:
       - key: SPRING_PROFILES_ACTIVE
