@@ -7,6 +7,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,8 @@ public class KakaoClient {
 	static final String RESTAURANT = "FD6";
 	static final String CAFE = "CE7";
 	static final String SIGHT = "AT4";
+
+	private static final Logger log = LoggerFactory.getLogger(KakaoClient.class);
 
 	private final RestClient http;
 	private final String key;
@@ -72,6 +76,8 @@ public class KakaoClient {
 			if (response == null || response.documents() == null) return List.of();
 			return response.documents().stream().map(Document::toPlace).toList();
 		} catch (RestClientException e) {
+			// the client only sees 502; Kakao's reason (e.g. "disabled OPEN_MAP_AND_LOCAL service") is in the message
+			log.warn("Kakao request failed: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Kakao request failed", e);
 		}
 	}
