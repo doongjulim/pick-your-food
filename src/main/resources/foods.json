@@ -37,6 +37,10 @@
   {"id": "yuringi", "name": "유린기", "description": "바삭한 닭튀김에 새콤한 간장 소스와 채소를 얹은 요리.", "category": "CHINESE", "situations": ["FRIENDS", "DATE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["SWEET_SOUR"]},
   {"id": "mala-xiangguo", "name": "마라샹궈", "description": "고른 재료를 얼얼한 마라 소스에 볶아 낸 요리.", "category": "CHINESE", "situations": ["FRIENDS", "DATE"], "moods": ["STRESSED", "EXCITED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SPICY", "RICH"]},
   {"id": "guobaorou", "name": "꿔바로우", "description": "찹쌀 반죽을 입혀 쫀득하게 튀긴 새콤달콤한 돼지고기.", "category": "CHINESE", "situations": ["FRIENDS", "GROUP", "DATE"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["SWEET_SOUR"]},
+  {"id": "gun-mandu", "name": "군만두", "description": "바삭하게 구운 피 속에 육즙 가득한 고기소를 채운 만두.", "category": "CHINESE", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL", "EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["RICH"]},
+  {"id": "gochu-japchae", "name": "고추잡채", "description": "피망과 돼지고기를 가늘게 채 썰어 볶아 꽃빵에 싸 먹는 요리.", "category": "CHINESE", "situations": ["FRIENDS", "DATE", "GROUP"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["RICH"]},
+  {"id": "kkanshou-saeu", "name": "깐쇼새우", "description": "튀긴 새우를 달콤 매콤한 칠리 소스에 버무린 요리.", "category": "CHINESE", "situations": ["FRIENDS", "DATE", "GROUP"], "moods": ["EXCITED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SWEET_SOUR", "SPICY"]},
+  {"id": "japchaebap", "name": "잡채밥", "description": "간장에 볶은 당면과 채소를 밥 위에 듬뿍 올린 한 그릇.", "category": "CHINESE", "situations": ["ALONE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
 
   {"id": "sushi", "name": "초밥", "description": "신선한 생선을 올린 한 입 크기의 밥.", "category": "JAPANESE", "situations": ["DATE", "FRIENDS", "ALONE"], "moods": ["EXCITED", "NORMAL"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD", "SWEET_SOUR"]},
   {"id": "ramen", "name": "돈코츠 라멘", "description": "돼지뼈를 오래 우린 진한 국물의 라멘.", "category": "JAPANESE", "situations": ["ALONE", "FRIENDS"], "moods": ["DOWN", "STRESSED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
@@ -50,6 +54,10 @@
   {"id": "katsudon", "name": "가츠동", "description": "돈카츠를 달걀과 함께 졸여 밥 위에 올린 덮밥.", "category": "JAPANESE", "situations": ["ALONE"], "moods": ["DOWN", "NORMAL"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH", "MILD"]},
   {"id": "sakedon", "name": "사케동", "description": "도톰한 생연어를 밥 위에 가득 올린 덮밥.", "category": "JAPANESE", "situations": ["ALONE", "DATE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["MILD"]},
   {"id": "japanese-curry", "name": "일본식 카레", "description": "걸쭉하고 달큰한 카레 소스를 밥에 듬뿍 부은 한 접시.", "category": "JAPANESE", "situations": ["ALONE"], "moods": ["DOWN", "NORMAL"], "hunger": ["MODERATE", "STARVING"], "tastes": ["MILD", "RICH"]},
+  {"id": "sashimi", "name": "모듬 사시미", "description": "제철 생선을 두툼하게 썰어 담은 회 한 접시.", "category": "JAPANESE", "situations": ["FRIENDS", "DATE", "GROUP"], "moods": ["EXCITED", "NORMAL"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
+  {"id": "oyakodon", "name": "오야코동", "description": "닭고기와 달걀을 달큰한 간장 육수에 익혀 밥에 올린 덮밥.", "category": "JAPANESE", "situations": ["ALONE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE"], "tastes": ["MILD"]},
+  {"id": "yakitori", "name": "야키토리", "description": "닭고기를 꼬치에 꿰어 숯불에 구운 이자카야 안주.", "category": "JAPANESE", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED", "STRESSED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["RICH", "SWEET_SOUR"]},
+  {"id": "takoyaki", "name": "타코야키", "description": "문어를 넣은 반죽을 동그랗게 구워 소스와 가쓰오부시를 뿌린 간식.", "category": "JAPANESE", "situations": ["ALONE", "FRIENDS"], "moods": ["EXCITED", "NORMAL"], "hunger": ["LIGHT"], "tastes": ["RICH", "SWEET_SOUR"]},
 
   {"id": "cream-pasta", "name": "크림 파스타", "description": "베이컨과 버섯을 넣은 꾸덕한 크림 파스타.", "category": "WESTERN", "situations": ["DATE", "FRIENDS"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["RICH"]},
   {"id": "tomato-pasta", "name": "토마토 파스타", "description": "새콤한 토마토 소스에 바질 향을 더한 파스타.", "category": "WESTERN", "situations": ["DATE", "ALONE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["SWEET_SOUR", "MILD"]},
@@ -63,6 +71,10 @@
   {"id": "gnocchi", "name": "뇨끼", "description": "감자 반죽을 쫀득하게 빚어 크림 소스에 버무린 파스타.", "category": "WESTERN", "situations": ["DATE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE"], "tastes": ["RICH", "MILD"]},
   {"id": "lasagna", "name": "라자냐", "description": "미트 소스와 치즈를 겹겹이 쌓아 오븐에 구운 파스타.", "category": "WESTERN", "situations": ["DATE", "GROUP"], "moods": ["DOWN", "NORMAL"], "hunger": ["STARVING"], "tastes": ["RICH"]},
   {"id": "fish-and-chips", "name": "피시앤칩스", "description": "바삭한 흰살생선 튀김에 감자튀김을 곁들인 영국식 한 접시.", "category": "WESTERN", "situations": ["FRIENDS", "ALONE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["RICH", "SWEET_SOUR"]},
+  {"id": "aglio-olio", "name": "알리오 올리오", "description": "마늘과 올리브유, 페페론치노로 맛을 낸 담백한 파스타.", "category": "WESTERN", "situations": ["ALONE", "DATE"], "moods": ["NORMAL"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
+  {"id": "rose-pasta", "name": "로제 파스타", "description": "토마토와 크림을 섞은 부드러운 분홍빛 소스 파스타.", "category": "WESTERN", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["RICH"]},
+  {"id": "vongole", "name": "봉골레 파스타", "description": "바지락과 화이트 와인으로 시원하게 맛을 낸 파스타.", "category": "WESTERN", "situations": ["ALONE", "DATE"], "moods": ["NORMAL"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
+  {"id": "hamburg-steak", "name": "함박스테이크", "description": "다진 고기를 도톰하게 구워 데미글라스 소스를 끼얹은 요리.", "category": "WESTERN", "situations": ["ALONE", "FRIENDS", "DATE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
 
   {"id": "tteokbokki", "name": "떡볶이", "description": "매콤달콤한 고추장 소스에 졸인 쫀득한 떡.", "category": "SNACK", "situations": ["FRIENDS", "ALONE"], "moods": ["STRESSED", "DOWN", "EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["SPICY", "SWEET_SOUR"]},
   {"id": "gimbap", "name": "김밥", "description": "햄, 단무지, 시금치를 말아 든든한 한 줄.", "category": "SNACK", "situations": ["ALONE"], "moods": ["NORMAL"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
@@ -76,6 +88,9 @@
   {"id": "janchi-guksu", "name": "잔치국수", "description": "멸치 국물에 소면과 고명을 얹은 소박한 국수.", "category": "SNACK", "situations": ["ALONE"], "moods": ["NORMAL", "DOWN"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
   {"id": "bibim-guksu", "name": "비빔국수", "description": "새콤달콤 매콤한 양념에 소면을 비빈 시원한 국수.", "category": "SNACK", "situations": ["ALONE", "FRIENDS"], "moods": ["EXCITED", "STRESSED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["SPICY", "SWEET_SOUR"]},
   {"id": "omurice", "name": "오므라이스", "description": "볶음밥을 부드러운 달걀로 감싸고 케첩 소스를 뿌린 한 접시.", "category": "SNACK", "situations": ["ALONE", "DATE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE"], "tastes": ["MILD", "SWEET_SOUR"]},
+  {"id": "rose-tteokbokki", "name": "로제 떡볶이", "description": "고추장 양념에 크림을 더해 매콤 고소한 떡볶이.", "category": "SNACK", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED", "STRESSED"], "hunger": ["MODERATE"], "tastes": ["SPICY", "RICH"]},
+  {"id": "gyeongyangsik-donkkaseu", "name": "경양식 돈가스", "description": "얇게 편 돼지고기를 튀겨 달큰한 소스를 듬뿍 부은 옛날 돈가스.", "category": "SNACK", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH", "SWEET_SOUR"]},
+  {"id": "tteokkkochi", "name": "떡꼬치", "description": "떡을 꼬치에 꿰어 튀기고 달콤한 고추장 소스를 바른 간식.", "category": "SNACK", "situations": ["ALONE", "FRIENDS"], "moods": ["EXCITED", "NORMAL"], "hunger": ["LIGHT"], "tastes": ["SWEET_SOUR", "SPICY"]},
 
   {"id": "pho", "name": "쌀국수", "description": "소고기 육수에 고수와 숙주를 얹은 맑은 국수.", "category": "SOUTHEAST_ASIAN", "situations": ["ALONE", "FRIENDS"], "moods": ["DOWN", "NORMAL"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
   {"id": "pad-thai", "name": "팟타이", "description": "새우와 땅콩을 곁들인 새콤달콤한 볶음 쌀국수.", "category": "SOUTHEAST_ASIAN", "situations": ["DATE", "FRIENDS"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["SWEET_SOUR"]},
@@ -85,6 +100,10 @@
   {"id": "banh-mi", "name": "반미", "description": "바삭한 바게트에 고기와 절인 채소를 채운 샌드위치.", "category": "SOUTHEAST_ASIAN", "situations": ["ALONE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["LIGHT"], "tastes": ["SWEET_SOUR", "MILD"]},
   {"id": "green-curry", "name": "그린 커리", "description": "코코넛 밀크에 풋고추 향이 어우러진 태국 커리.", "category": "SOUTHEAST_ASIAN", "situations": ["DATE", "ALONE"], "moods": ["DOWN", "EXCITED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SPICY", "RICH"]},
   {"id": "goi-cuon", "name": "월남쌈", "description": "라이스페이퍼에 채소와 새우를 싸 먹는 가벼운 한 끼.", "category": "SOUTHEAST_ASIAN", "situations": ["FRIENDS", "GROUP", "DATE"], "moods": ["NORMAL"], "hunger": ["LIGHT"], "tastes": ["MILD", "SWEET_SOUR"]},
+  {"id": "pad-kra-pao", "name": "팟카파오", "description": "다진 고기를 바질과 함께 매콤하게 볶아 달걀 프라이를 올린 덮밥.", "category": "SOUTHEAST_ASIAN", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL", "STRESSED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SPICY"]},
+  {"id": "poo-pad-pong-curry", "name": "푸팟퐁커리", "description": "튀긴 게를 달걀과 커리 소스에 부드럽게 볶은 태국 요리.", "category": "SOUTHEAST_ASIAN", "situations": ["FRIENDS", "DATE", "GROUP"], "moods": ["EXCITED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
+  {"id": "mie-goreng", "name": "미고렝", "description": "달콤 짭짤한 간장 소스에 볶은 인도네시아식 볶음면.", "category": "SOUTHEAST_ASIAN", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["SWEET_SOUR", "RICH"]},
+  {"id": "khao-pad", "name": "카오팟", "description": "피시 소스로 간을 해 고슬고슬하게 볶은 태국식 볶음밥.", "category": "SOUTHEAST_ASIAN", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL"], "hunger": ["MODERATE"], "tastes": ["MILD"]},
 
   {"id": "taco", "name": "타코", "description": "또르띠야에 고기와 살사를 얹어 한입에.", "category": "MEXICAN", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["SPICY", "SWEET_SOUR"]},
   {"id": "burrito", "name": "부리또", "description": "밥, 콩, 고기를 또르띠야로 꽉 말아 든든한 한 덩이.", "category": "MEXICAN", "situations": ["ALONE"], "moods": ["NORMAL", "STRESSED"], "hunger": ["STARVING"], "tastes": ["RICH"]},
@@ -94,6 +113,8 @@
   {"id": "enchilada", "name": "엔칠라다", "description": "소를 채운 또르띠야에 칠리 소스와 치즈를 덮어 구운 요리.", "category": "MEXICAN", "situations": ["DATE", "FRIENDS"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SPICY", "RICH"]},
   {"id": "burrito-bowl", "name": "부리또 볼", "description": "밥 위에 고기, 콩, 살사, 과카몰리를 담은 한 그릇.", "category": "MEXICAN", "situations": ["ALONE"], "moods": ["NORMAL"], "hunger": ["MODERATE"], "tastes": ["MILD", "SWEET_SOUR"]},
   {"id": "chimichanga", "name": "치미창가", "description": "부리또를 바삭하게 튀겨 낸 멕시칸 별미.", "category": "MEXICAN", "situations": ["FRIENDS"], "moods": ["STRESSED", "EXCITED"], "hunger": ["STARVING"], "tastes": ["RICH"]},
+  {"id": "chili-con-carne", "name": "칠리 콘 카르네", "description": "다진 고기와 강낭콩을 칠리 양념에 뭉근히 끓인 스튜.", "category": "MEXICAN", "situations": ["ALONE", "FRIENDS"], "moods": ["STRESSED", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SPICY", "RICH"]},
+  {"id": "taco-salad", "name": "타코 샐러드", "description": "바삭한 토르티야 볼에 채소와 고기, 살사를 담은 샐러드.", "category": "MEXICAN", "situations": ["ALONE", "DATE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["LIGHT"], "tastes": ["SWEET_SOUR"]},
 
   {"id": "indian-curry", "name": "인도 커리", "description": "향신료를 듬뿍 넣은 커리를 갓 구운 난에 찍어 먹는 맛.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["DATE", "FRIENDS"], "moods": ["DOWN", "NORMAL"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SPICY", "RICH"]},
   {"id": "butter-chicken", "name": "버터 치킨", "description": "토마토와 버터 크림 소스에 졸인 부드러운 치킨 커리.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["DATE", "ALONE"], "moods": ["DOWN", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["RICH", "MILD"]},
@@ -103,6 +124,9 @@
   {"id": "falafel", "name": "팔라펠", "description": "병아리콩을 갈아 튀긴 고소한 완자를 피타에 싸 먹는 요리.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["ALONE"], "moods": ["NORMAL"], "hunger": ["LIGHT"], "tastes": ["MILD"]},
   {"id": "hummus-plate", "name": "후무스 플레이트", "description": "병아리콩 후무스에 피타와 채소를 곁들인 한 접시.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["DATE", "ALONE"], "moods": ["NORMAL", "DOWN"], "hunger": ["LIGHT"], "tastes": ["MILD"]},
   {"id": "shawarma", "name": "샤와르마", "description": "꼬치에 겹겹이 구운 고기를 얇게 썰어 랩에 싼 요리.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["FRIENDS", "ALONE"], "moods": ["EXCITED", "STRESSED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH", "SWEET_SOUR"]},
+  {"id": "chicken-tikka-masala", "name": "치킨 티카 마살라", "description": "구운 닭고기를 토마토 크림 소스에 끓인 커리.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["FRIENDS", "DATE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
+  {"id": "palak-paneer", "name": "팔락 파니르", "description": "시금치 커리에 인도식 치즈 파니르를 넣은 요리.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["ALONE", "DATE"], "moods": ["NORMAL"], "hunger": ["MODERATE"], "tastes": ["MILD"]},
+  {"id": "samosa", "name": "사모사", "description": "감자와 향신료 소를 넣고 세모나게 빚어 튀긴 간식.", "category": "INDIAN_MIDDLE_EASTERN", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL", "EXCITED"], "hunger": ["LIGHT"], "tastes": ["SPICY"]},
 
   {"id": "galbi", "name": "갈비", "description": "달큰한 양념에 재운 갈비를 숯불에 구운 특별한 날 메뉴.", "category": "MEAT", "situations": ["GROUP", "DATE"], "moods": ["EXCITED", "NORMAL"], "hunger": ["STARVING"], "tastes": ["SWEET_SOUR", "RICH"]},
   {"id": "gopchang", "name": "곱창", "description": "고소한 기름이 터지는 소곱창 구이.", "category": "MEAT", "situations": ["FRIENDS"], "moods": ["STRESSED", "EXCITED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
@@ -112,6 +136,10 @@
   {"id": "bossam", "name": "보쌈", "description": "부드럽게 삶은 돼지고기를 김치와 쌈 싸 먹는 요리.", "category": "MEAT", "situations": ["GROUP", "FRIENDS"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["MILD", "RICH"]},
   {"id": "chadolbagi", "name": "차돌박이", "description": "얇게 썬 차돌을 살짝 구워 기름장에 찍어 먹는 맛.", "category": "MEAT", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["RICH"]},
   {"id": "makchang", "name": "막창", "description": "쫄깃하게 구운 막창을 된장 소스에 찍어 먹는 안주.", "category": "MEAT", "situations": ["FRIENDS"], "moods": ["STRESSED"], "hunger": ["MODERATE"], "tastes": ["RICH", "SPICY"]},
+  {"id": "moksal-gui", "name": "목살구이", "description": "두툼한 돼지 목살을 불판에 구워 쌈에 싸 먹는 고기.", "category": "MEAT", "situations": ["FRIENDS", "GROUP"], "moods": ["EXCITED", "STRESSED"], "hunger": ["STARVING"], "tastes": ["RICH"]},
+  {"id": "daechang", "name": "대창", "description": "기름진 소 대창을 바삭하게 구워 고소함이 터지는 구이.", "category": "MEAT", "situations": ["FRIENDS", "GROUP"], "moods": ["EXCITED", "STRESSED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
+  {"id": "ori-roseu", "name": "오리 로스구이", "description": "얇게 썬 오리고기를 구워 기름기를 빼고 먹는 구이.", "category": "MEAT", "situations": ["FRIENDS", "DATE", "GROUP"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
+  {"id": "yukhoe", "name": "육회", "description": "신선한 생 소고기를 배와 달걀노른자에 버무린 요리.", "category": "MEAT", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["MILD"]},
 
   {"id": "fried-chicken", "name": "프라이드치킨", "description": "겉은 바삭하고 속은 촉촉한 국민 야식.", "category": "FAST_FOOD", "situations": ["FRIENDS", "GROUP", "ALONE"], "moods": ["EXCITED", "STRESSED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["RICH"]},
   {"id": "yangnyeom-chicken", "name": "양념치킨", "description": "달콤 매콤한 양념을 버무린 바삭한 치킨.", "category": "FAST_FOOD", "situations": ["FRIENDS", "GROUP"], "moods": ["EXCITED", "DOWN"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SWEET_SOUR", "SPICY"]},
@@ -121,6 +149,9 @@
   {"id": "chicken-burger", "name": "치킨버거", "description": "두툼한 치킨 패티를 바삭하게 튀겨 넣은 버거.", "category": "FAST_FOOD", "situations": ["ALONE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["RICH", "SPICY"]},
   {"id": "boneless-chicken", "name": "순살치킨", "description": "뼈 없이 한입 크기로 튀겨 먹기 편한 치킨.", "category": "FAST_FOOD", "situations": ["DATE", "FRIENDS"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["RICH", "MILD"]},
   {"id": "dakgangjeong", "name": "닭강정", "description": "물엿 양념에 버무려 식어도 바삭한 한입 치킨.", "category": "FAST_FOOD", "situations": ["FRIENDS", "ALONE"], "moods": ["DOWN", "EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["SWEET_SOUR"]},
+  {"id": "ganjang-chicken", "name": "간장치킨", "description": "달콤 짭짤한 간장 소스를 입힌 바삭한 치킨.", "category": "FAST_FOOD", "situations": ["FRIENDS", "GROUP"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SWEET_SOUR", "RICH"]},
+  {"id": "padak", "name": "파닭", "description": "치킨 위에 채 썬 파와 새콤한 소스를 듬뿍 올린 메뉴.", "category": "FAST_FOOD", "situations": ["FRIENDS", "GROUP"], "moods": ["EXCITED", "STRESSED"], "hunger": ["MODERATE", "STARVING"], "tastes": ["SWEET_SOUR"]},
+  {"id": "chicken-nuggets", "name": "치킨너겟", "description": "한입 크기로 튀긴 닭고기에 소스를 찍어 먹는 간식.", "category": "FAST_FOOD", "situations": ["ALONE", "FRIENDS"], "moods": ["NORMAL", "DOWN"], "hunger": ["LIGHT"], "tastes": ["MILD"]},
 
   {"id": "eggs-benedict", "name": "에그 베네딕트", "description": "잉글리시 머핀에 수란과 홀랜다이즈 소스를 올린 브런치.", "category": "BRUNCH", "situations": ["DATE", "FRIENDS"], "moods": ["EXCITED", "NORMAL"], "hunger": ["MODERATE"], "tastes": ["RICH"]},
   {"id": "pancake", "name": "팬케이크", "description": "폭신하게 구워 메이플 시럽과 버터를 얹은 팬케이크.", "category": "BRUNCH", "situations": ["DATE", "FRIENDS"], "moods": ["DOWN", "EXCITED"], "hunger": ["LIGHT", "MODERATE"], "tastes": ["SWEET_SOUR"]},
@@ -129,5 +160,8 @@
   {"id": "bagel", "name": "베이글", "description": "쫄깃한 베이글에 크림치즈를 듬뿍 바른 한 끼.", "category": "BRUNCH", "situations": ["ALONE"], "moods": ["NORMAL", "STRESSED"], "hunger": ["LIGHT"], "tastes": ["MILD"]},
   {"id": "omelette", "name": "오믈렛", "description": "치즈와 채소를 넣어 부드럽게 말아 낸 달걀 요리.", "category": "BRUNCH", "situations": ["ALONE", "DATE"], "moods": ["NORMAL", "DOWN"], "hunger": ["LIGHT"], "tastes": ["MILD"]},
   {"id": "poke", "name": "포케", "description": "밥 위에 연어와 참치, 채소를 올린 하와이식 볼.", "category": "BRUNCH", "situations": ["ALONE", "DATE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["MODERATE"], "tastes": ["MILD", "SWEET_SOUR"]},
-  {"id": "english-breakfast", "name": "잉글리시 브렉퍼스트", "description": "소시지, 베이컨, 달걀, 콩을 한 접시에 담은 든든한 아침.", "category": "BRUNCH", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED", "STRESSED"], "hunger": ["STARVING"], "tastes": ["RICH"]}
+  {"id": "english-breakfast", "name": "잉글리시 브렉퍼스트", "description": "소시지, 베이컨, 달걀, 콩을 한 접시에 담은 든든한 아침.", "category": "BRUNCH", "situations": ["FRIENDS", "DATE"], "moods": ["EXCITED", "STRESSED"], "hunger": ["STARVING"], "tastes": ["RICH"]},
+  {"id": "avocado-toast", "name": "아보카도 토스트", "description": "구운 빵 위에 으깬 아보카도와 달걀을 올린 토스트.", "category": "BRUNCH", "situations": ["ALONE", "DATE"], "moods": ["NORMAL"], "hunger": ["LIGHT"], "tastes": ["MILD"]},
+  {"id": "shakshuka", "name": "샥슈카", "description": "토마토 소스에 달걀을 깨 넣고 익혀 빵에 찍어 먹는 요리.", "category": "BRUNCH", "situations": ["ALONE", "FRIENDS", "DATE"], "moods": ["NORMAL", "DOWN"], "hunger": ["MODERATE"], "tastes": ["SPICY"]},
+  {"id": "ricotta-salad", "name": "리코타 샐러드", "description": "부드러운 리코타 치즈와 채소, 과일을 곁들인 샐러드.", "category": "BRUNCH", "situations": ["ALONE", "DATE"], "moods": ["NORMAL", "EXCITED"], "hunger": ["LIGHT"], "tastes": ["MILD", "SWEET_SOUR"]}
 ]
