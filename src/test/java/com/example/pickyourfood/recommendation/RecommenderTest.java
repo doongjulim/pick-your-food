@@ -85,8 +85,26 @@ class RecommenderTest {
 	}
 
 	@Test
-	void everyAnswerCombinationGivesThreeDistinctFoods() {
-		Recommender recommender = new Recommender(new FoodCatalog(new JsonMapper()).all(), new Random(7));
+	void alternativesMayScoreSlightlyBelowThirdPlace() {
+		// scores: best 4+3, then 3, then 0; the 3 - 2 floor drops "neither" only when a third food ties at 3
+		List<Food> foods = List.of(
+				food("best", Category.KOREAN, Mood.DOWN, Taste.SPICY),
+				food("taste-1", Category.KOREAN, Mood.NORMAL, Taste.SPICY),
+				food("taste-2", Category.KOREAN, Mood.NORMAL, Taste.SPICY),
+				food("taste-3", Category.KOREAN, Mood.NORMAL, Taste.SPICY),
+				food("neither", Category.KOREAN, Mood.NORMAL, Taste.MILD));
+
+		Set<String> seen = new HashSet<>();
+		for (int seed = 0; seed < 30; seed++) {
+			Recommendation result = new Recommender(foods, new Random(seed)).recommend(answers(Category.KOREAN));
+			assertThat(result.best().id()).isEqualTo("best");
+			result.alternatives().forEach(food -> seen.add(food.id()));
+		}
+
+		assertThat(seen).containsExactlyInAnyOrder("taste-1", "taste-2", "taste-3");
+	}
+
+	private static List<Answers> everyAnswer() {
 		List<Answers> all = new ArrayList<>();
 		for (Situation s : Situation.values())
 			for (Mood m : Mood.values())
@@ -94,8 +112,30 @@ class RecommenderTest {
 					for (Hunger h : Hunger.values())
 						for (Taste t : Taste.values())
 							all.add(new Answers(s, m, c, h, t));
+		return all;
+	}
 
-		assertThat(all).allSatisfy(answers -> {
+	// a single category has only 10-25 foods, so a few of its answers can still be fixed; "any" never is
+	@Test
+	void noAnyCategoryAnswerAlwaysGivesTheSameThreeFoods() {
+		Recommender recommender = new Recommender(new FoodCatalog(new JsonMapper()).all(), new Random(7));
+
+		assertThat(everyAnswer()).filteredOn(answers -> answers.category() == Category.ANY).allSatisfy(answers -> {
+			Set<String> seen = new HashSet<>();
+			for (int i = 0; i < 30; i++) {
+				Recommendation result = recommender.recommend(answers);
+				seen.add(result.best().id());
+				result.alternatives().forEach(food -> seen.add(food.id()));
+			}
+			assertThat(seen).as(answers.toString()).hasSizeGreaterThan(3);
+		});
+	}
+
+	@Test
+	void everyAnswerCombinationGivesThreeDistinctFoods() {
+		Recommender recommender = new Recommender(new FoodCatalog(new JsonMapper()).all(), new Random(7));
+
+		assertThat(everyAnswer()).allSatisfy(answers -> {
 			Recommendation result = recommender.recommend(answers);
 			List<String> ids = new ArrayList<>();
 			ids.add(result.best().id());

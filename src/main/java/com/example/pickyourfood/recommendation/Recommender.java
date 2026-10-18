@@ -18,6 +18,8 @@ public class Recommender {
 	static final int TASTE_WEIGHT = 3;
 	static final int HUNGER_WEIGHT = 2;
 	static final int SITUATION_WEIGHT = 2;
+	// alternatives may score this much below third place, so no answer always gets the same three foods
+	static final int ALTERNATIVE_SLACK = 2;
 
 	private final List<Food> foods;
 	private final Random random;
@@ -38,9 +40,16 @@ public class Recommender {
 				.toList());
 		// shuffle first: the stable sort then keeps equal scores in random order
 		Collections.shuffle(candidates, random);
-		candidates.sort(Comparator.comparingInt((Food food) -> score(food, answers)).reversed());
-		List<Food> top = candidates.subList(0, Math.min(3, candidates.size()));
-		return new Recommendation(top.get(0), List.copyOf(top.subList(1, top.size())));
+		Comparator<Food> byScore = Comparator.comparingInt((Food food) -> score(food, answers)).reversed();
+		candidates.sort(byScore);
+		int floor = score(candidates.get(Math.min(2, candidates.size() - 1)), answers) - ALTERNATIVE_SLACK;
+		List<Food> pool = new ArrayList<>(candidates.subList(1, candidates.size()).stream()
+				.filter(food -> score(food, answers) >= floor)
+				.toList());
+		Collections.shuffle(pool, random);
+		List<Food> alternatives = new ArrayList<>(pool.subList(0, Math.min(2, pool.size())));
+		alternatives.sort(byScore);
+		return new Recommendation(candidates.get(0), List.copyOf(alternatives));
 	}
 
 	static int score(Food food, Answers answers) {
