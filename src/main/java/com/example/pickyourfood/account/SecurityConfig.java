@@ -30,7 +30,7 @@ class SecurityConfig {
 				.logout(logout -> logout
 						.logoutUrl("/api/logout")
 						.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
-				// the recommendation POST reads no session or account, so it needs no token
+				// the recommendation POST only reads the account's saved foods and changes nothing, so it needs no token
 				.csrf(csrf -> csrf.spa().ignoringRequestMatchers("/api/recommendations"));
 		return http.build();
 	}

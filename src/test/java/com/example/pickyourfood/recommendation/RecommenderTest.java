@@ -13,6 +13,7 @@ import com.example.pickyourfood.recommendation.Recommender.Recommendation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,34 @@ class RecommenderTest {
 		}
 
 		assertThat(bests).hasSizeGreaterThan(1);
+	}
+
+	@Test
+	void aSavedFoodWinsATie() {
+		List<Food> foods = List.of(
+				food("a", Category.KOREAN, Mood.DOWN, Taste.SPICY),
+				food("b", Category.KOREAN, Mood.DOWN, Taste.SPICY),
+				food("c", Category.KOREAN, Mood.DOWN, Taste.SPICY));
+
+		for (int seed = 0; seed < 20; seed++) {
+			Recommendation result = new Recommender(foods, new Random(seed)).recommend(answers(Category.KOREAN), Map.of("b", 1));
+			assertThat(result.best().id()).isEqualTo("b");
+		}
+	}
+
+	@Test
+	void aSavedFoodNeverBeatsAnAnswerMatchOnItsOwn() {
+		// saved but matching nothing: at most the 2-point cap, below a taste match (3)
+		List<Food> foods = List.of(
+				food("taste-only", Category.KOREAN, Mood.NORMAL, Taste.SPICY),
+				food("saved", Category.KOREAN, Mood.NORMAL, Taste.MILD));
+
+		for (int seed = 0; seed < 20; seed++) {
+			Recommendation result = new Recommender(foods, new Random(seed)).recommend(answers(Category.KOREAN), Map.of("saved", 50));
+			assertThat(result.best().id()).isEqualTo("taste-only");
+		}
+		assertThat(Recommender.savedBonus(1)).isEqualTo(1);
+		assertThat(Recommender.savedBonus(50)).isEqualTo(Recommender.SAVED_BONUS_MAX);
 	}
 
 	@Test
